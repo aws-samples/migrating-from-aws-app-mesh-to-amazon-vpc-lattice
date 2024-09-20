@@ -1,0 +1,24 @@
+apiVersion: application-networking.k8s.aws/v1alpha1
+kind: TargetGroupPolicy
+metadata:
+  name: proddetail-tgp2
+  namespace: prodcatalog-ns
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: proddetail2
+    namespace: prodcatalog-ns
+  protocol: HTTP
+  protocolVersion: HTTP1
+  healthCheck:
+    enabled: true
+    intervalSeconds: 10
+    timeoutSeconds: 1
+    healthyThresholdCount: 3
+    unhealthyThresholdCount: 2
+    path: "/catalogDetail"
+    port: 3000
+    protocol: HTTP
+    protocolVersion: HTTP1
+    statusMatch: "200"

@@ -1,0 +1,152 @@
+### In-Place migration steps - Replace AppMesh with Amazon VPC lattice. 
+These steps differ from main [README.md](README.md) file, which is focused on building a differnt namespace to deploy app.
+
+**Note**: After Amazon VPC lattice services are configured for the polyglot application. Update the lattice service URL in the deployment (base_app.yaml) as arguments in the environment variables.
+
+**Step 1: Export the variables and start following after completeing 9 steps from README.md](README.md) file.**
+
+```bash
+	export oldns_name=prodcatalog-ns
+	export newns_name=prodcatalog-ns-lattice
+	alias oldns_cmd='sed "s/$newns_name/$oldns_name/g"'
+```
+
+**Step 2: Step 10 from main [README.md](README.md) file: use old namespace to create service account**
+
+```bash
+	oldns_cmd ./vpc-lattice-config/files/lattice-pod-service-account.yaml|envsubst|kubectl apply -f -
+```
+
+**Step 3: Continue to follow step 11 to 13 from main [README.md](README.md) file**
+
+**Step 4: Step 14 from main [README.md](README.md) file: use old namespace to create pod identity association**
+
+```bash
+	aws eks create-pod-identity-association --cluster-name $CLUSTER_NAME --role-arn $VPCLatticeProdcatalogIAMRoleArn --namespace $oldns_name --service-account prodcatalog-lattice-sa
+```
+
+**Step 5: Step 15 from main [README.md](README.md) file: (***SKIP***) not changing the namespace, so no need to redeploy the app.**
+	### Remember: service-account needs to be updated.###
+	### We'll do it at the end to make sure we have service working
+	### oldns_cmd ./vpc-lattice-config/files/base_app.yaml |kubectl apply -f -
+
+**Step 6: Continue to follow step 16 to 18 from main [README.md](README.md) file**
+
+**Step 7: Step 19 from main [README.md](README.md) file: use old namespace name to create gateway**
+
+```bash
+	oldns_cmd ./vpc-lattice-config/files/product-catalog-gateway.yaml|envsubst|kubectl apply -f -
+	kubectl wait --for=condition=Programmed gateway/product-catalog-lattice-gw -n $oldns_name
+	kubectl get gateway -n $oldns_name
+	kubectl get gateway -n $oldns_name -o jsonpath='{"Status: "}{.items[*].status.conditions[1].reason}{", "}{"Reason_or_DNS_Name: "}{.items[*].status.conditions[1].message}{"\n"}'
+```
+
+**Step 8: Step 20 + 21 from main [README.md](README.md) file: use old namespace name to Create TargetGroupPolicy**
+
+```bash
+	for file in proddetail-TargetGroupPolicy-proddetail-v1 prodcatalog-TargetGroupPolicy frontend-node-TargetGroupPolicy proddetail-HTTPRoute prodcatalog-HTTPRoute frontend-node-HTTPRoute
+	  do
+		oldns_cmd ./vpc-lattice-config/files/$file.yaml |envsubst |kubectl apply -f -
+	done
+```
+
+**Step 9: Step 22 from main [README.md](README.md) file: use old namespace name to test connectivity using Amazon VPC lattice endpoints.**
+	### NOTE: It will fail because of ### Known issue https://github.com/istio/istio/issues/2833 ### Envoy 404 when receiving request with unknown hostname	
+
+```bash
+    export GET_PRODDETAIL_URL=$(kubectl get -n $oldns_name httproute proddetail-httproute -o jsonpath='{.metadata.annotations.application-networking\.k8s\.aws/lattice-assigned-domain-name}')
+
+    # find the pod name in 'prodcatalog'
+    export GET_CATALOG_POD_NAME=$(kubectl get pods -n $oldns_name -l app=prodcatalog -o jsonpath='{.items[].metadata.name}')
+
+    # try connecting from 'prodcatalog' to 'proddetail', use output from prvious command to replace 'GET_PRODDETAIL_URL'
+    export CHECK_CONN_CATLOG_TO_PRODDETAIL=$(echo "kubectl -n $oldns_name exec -it ${GET_CATALOG_POD_NAME} -c prodcatalog -- curl ${GET_PRODDETAIL_URL}:3000/catalogDetail 2>&1|jq -s") 
+
+    # Find URL for "prodcatalog" service created by httproute
+    export GET_CATALOG_URL=$(kubectl get -n $oldns_name httproute prodcatalog-httproute -o jsonpath='{.metadata.annotations.application-networking\.k8s\.aws/lattice-assigned-domain-name}')
+
+    # get inside "frontend-node" container and see if it can get data "prodcatalog" AppMesh service
+    export GET_FRONTEND_POD_NAME=$(kubectl get pods -n $oldns_name -l app=frontend-node -o jsonpath='{.items[].metadata.name}')
+
+    # try connecting from 'frontend-node' to 'prodcatalog', use output from prvious command to replace 'GET_CATALOG_URL'
+    export CHECK_CONN_FRONTEND_TO_CATALOG=$(echo "kubectl -n $oldns_name exec -it ${GET_FRONTEND_POD_NAME} -c frontend-node -- curl ${GET_CATALOG_URL}:5000/products/ 2>&1|jq -s") 
+```
+
+**Step 10: Step 23 from main [README.md](README.md) file: use old namespace name to test connectivity using Amazon VPC lattice endpoints. Validate you have GET_CATALOG_URL and GET_PRODDETAIL_URL variables set. if not, please follow Step 9: Step 22 from main [README.md](README.md) file.**
+	### ###NOTE:  It will fail because of ### Known issue https://github.com/istio/istio/issues/2833 ### Envoy 404 when receiving request with unknown hostname	
+
+```bash
+    if [ -z $GET_CATALOG_URL ] ||  [[ -z $GET_PRODDETAIL_URL ]]; then
+        test -n "$GET_CATALOG_URL" && echo GET_CATALOG_URL is "$GET_CATALOG_URL" || echo GET_CATALOG_URL is not set
+        test -n "$GET_PRODDETAIL_URL" && echo GET_PRODDETAIL_URL is "$GET_PRODDETAIL_URL" || echo GET_PRODDETAIL_URL is not set
+        test -n "$AWS_REGION" && echo AWS_REGION is "$AWS_REGION" || echo AWS_REGION is not set
+        test -n "$ACCOUNT_ID" && echo ACCOUNT_ID is "$ACCOUNT_ID" || echo ACCOUNT_ID is not set
+        echo -e "Please set the variables as shown in Step 21 and re-try \n"
+    else
+        echo "executing the command to test connection from 'prodcatalog' to 'proddetail' using Amazon VPC lattice endponts."; echo
+        eval $CHECK_CONN_CATLOG_TO_PRODDETAIL;
+        echo -e "-----------------------------------------------\n"
+        echo "executing the command to test connection from 'frontend-node' to 'prodcatalog' using Amazon VPC lattice endponts."; echo
+        eval $CHECK_CONN_FRONTEND_TO_CATALOG
+        echo -e "-----------------------------------------------\n"
+        echo "compare both outputs"
+        eval $CHECK_CONN_FRONTEND_TO_CATALOG; echo -e '-----------\n';eval $CHECK_CONN_CATLOG_TO_PRODDETAIL
+    fi
+```
+
+#### **Service Impact**: - because we need to remove flag on namespace to remove App Mesh sidecar injection ####
+
+**Step 11: Step 24 from main [README.md](README.md) file: configure application to work using Amazon VPC lattice endponts.**
+	**Disable appmesh injection using namespace.** `appmesh.k8s.aws/sidecarInjectorWebhook: enabled`: The sidecar injector will inject the sidecar into pods by default. Add the `appmesh.k8s.aws/sidecarInjectorWebhook` annotation with value `disabled` to the namespace labels to override the default and disable injection. [see documentation here](https://aws.github.io/aws-app-mesh-controller-for-k8s/reference/injector/)**
+		
+``` bash
+	kubectl edit ns $oldns_name
+```
+
+
+
+**Step 12:	rolling restart the deployments.**
+
+```bash		
+	for app in prodcatalog proddetail frontend-node proddetail2
+	  do
+		kubectl -n prodcatalog-ns rollout restart deployment $app
+	done
+```
+
+**Step 13: validate the containers in the pods, give it a min to clean up the old pods**
+
+```bash
+	kubectl -n prodcatalog-ns get pods -o 'custom-columns=POD:.metadata.name,CONTAINER:.spec.containers[*].name' |egrep -i 'prodcatalog|proddetail|frontend-node|proddetail2'
+```
+	
+**Step 14: test connectivity again using Step 22 and 23 and using these commands**
+	Get inside **"frontend-node"** container and see if it can get data **"prodcatalog"** AppMesh service
+
+```bash
+	kubectl -n $oldns_name exec -it `kubectl get pods -n $oldns_name -l app=frontend-node -o jsonpath='{.items[].metadata.name}'` -c frontend-node -- curl http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/ 2>&1|jq -s
+```
+
+	Get inside **"prodcatalog"** container and see if it can get data from **"proddetail"** AppMesh service
+
+```bash
+	kubectl -n $oldns_name exec -it `kubectl get pods -n $oldns_name -l app=prodcatalog -o jsonpath='{.items[].metadata.name}'` -c prodcatalog -- curl http://proddetail.prodcatalog-ns.svc.cluster.local:3000/catalogDetail 2>&1|jq -s
+```
+
+**Step 15: Validate the files and endpoints**
+
+```bash
+	echo $GET_CATALOG_URL
+	echo $GET_PRODDETAIL_URL
+	grep -n svc.cluster.local ./eks-app-mesh-polyglot-demo/deployment/base_app.yaml
+	echo "runing following command to validate and make sure new URLs look correct"		
+	oldns_cmd ./eks-app-mesh-polyglot-demo/deployment/base_app.yaml|sed -e "s/prodcatalog.prodcatalog-ns.svc.cluster.local/$GET_CATALOG_URL/g" -e "s/proddetail.prodcatalog-ns.svc.cluster.local/$GET_PRODDETAIL_URL/g" |envsubst |egrep -n ':5000/products/|:3000/catalogDetail'
+```
+
+**Step 15.1: update apps to use Amazon VPC lattice endpoints. Finally apply the changes**
+
+```bash
+	oldns_cmd ./eks-app-mesh-polyglot-demo/deployment/base_app.yaml |sed -e "s/prodcatalog.prodcatalog-ns.svc.cluster.local/$GET_CATALOG_URL/g" -e "s/proddetail.prodcatalog-ns.svc.cluster.local/$GET_PRODDETAIL_URL/g"|envsubst|kubectl apply -f -
+```
+
+##### Validate the app and think about replacing the Service Account too. It is leftover from Step 5: Step 15 from main [README.md](README.md) file.

@@ -1,0 +1,39 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: product-catalog-lattice-gw
+  namespace: prodcatalog-ns-lattice
+spec:
+  gatewayClassName: amazon-vpc-lattice
+  listeners:
+  - allowedRoutes:
+      namespaces:
+        from: Same
+    name: http
+    port: 80
+    protocol: HTTP
+  - allowedRoutes:
+        namespaces:
+          from: Same
+    name: https
+    protocol: HTTPS
+    port: 443
+  - allowedRoutes:
+      namespaces:
+        from: Same
+    name: proddetail
+    port: 3000
+    protocol: HTTP
+  - allowedRoutes:
+      namespaces:
+        from: Same
+    name: prodcatalog
+    port: 5000
+    protocol: HTTP
+  - allowedRoutes:
+      namespaces:
+        from: Same
+    name: frontend-node
+    port: 9000
+    protocol: HTTP

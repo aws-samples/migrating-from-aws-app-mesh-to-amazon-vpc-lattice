@@ -1,0 +1,103 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proddetail2
+  namespace: prodcatalog-ns-lattice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proddetail2
+  template:
+    metadata:
+      labels:
+        app: proddetail2
+    spec:
+      serviceAccountName: prodcatalog-lattice-sa
+      containers:
+        - name: proddetail
+          image: "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/eks-app-mesh-to-vpc-lattice/catalog_detail:${APP_VERSION_2}"
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 3000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 3000
+            successThreshold: 3
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proddetail2
+  namespace: prodcatalog-ns-lattice
+  labels:
+    app: proddetail2
+spec:
+  ports:
+    - name: "http"
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: proddetail2
+---
+apiVersion: application-networking.k8s.aws/v1alpha1
+kind: TargetGroupPolicy
+metadata:
+  name: proddetail-tgp-v2
+  namespace: prodcatalog-ns-lattice
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: proddetail2
+    namespace: prodcatalog-ns-lattice
+  protocol: HTTP
+  protocolVersion: HTTP1
+  healthCheck:
+    enabled: true
+    intervalSeconds: 10
+    timeoutSeconds: 1
+    healthyThresholdCount: 3
+    unhealthyThresholdCount: 2
+    path: "/catalogDetail"
+    port: 3000
+    protocol: HTTP
+    protocolVersion: HTTP1
+    statusMatch: "200"
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: proddetail-httproute
+  namespace: prodcatalog-ns-lattice
+spec:
+  parentRefs:
+    - name: product-catalog-lattice-gw
+      sectionName: proddetail
+  rules:
+    - backendRefs:
+        - name: proddetail
+          namespace: prodcatalog-ns-lattice
+          kind: Service
+          port: 3000
+          weight: 50
+        - name: proddetail2
+          namespace: prodcatalog-ns-lattice
+          kind: Service
+          port: 3000
+          weight: 50
+      matches:
+      - path:
+          type: PathPrefix
+          value: /catalogDetail
+---

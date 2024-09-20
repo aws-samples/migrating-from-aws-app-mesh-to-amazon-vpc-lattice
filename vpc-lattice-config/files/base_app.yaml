@@ -1,0 +1,184 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prodcatalog-ns-lattice
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-node
+  namespace: prodcatalog-ns-lattice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend-node
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/stats/prometheus'
+      labels:
+        app: frontend-node
+    spec:
+      serviceAccountName: prodcatalog-lattice-sa
+      containers:
+        - name: frontend-node
+          image: "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/eks-app-mesh-to-vpc-lattice/frontend_node:${APP_VERSION}"
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 9000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 9000
+            successThreshold: 3
+          env:
+            - name: BASE_URL
+              value: "http://prodcatalog.prodcatalog-ns-lattice.svc.cluster.local:5000/products/"
+          ports:
+            - containerPort: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  #annotations:
+  # This annotation is only required if you are creating an internal facing ELB. Remove this annotation to create public facing ELB.
+  #service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+  name: frontend-node
+  namespace: prodcatalog-ns-lattice
+  labels:
+    app: frontend-node
+spec:
+  ports:
+    - name: "http"
+      port: 9000
+      targetPort: 9000
+  selector:
+    app: frontend-node
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proddetail
+  namespace: prodcatalog-ns-lattice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proddetail
+  template:
+    metadata:
+      labels:
+        app: proddetail
+    spec:
+      serviceAccountName: prodcatalog-lattice-sa
+      containers:
+        - name: proddetail
+          image: "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/eks-app-mesh-to-vpc-lattice/catalog_detail:${APP_VERSION}"
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 3000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 3000
+            successThreshold: 3
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  #annotations:
+  # This annotation is only required if you are creating an internal facing ELB. Remove this annotation to create public facing ELB.
+  #service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+  name: proddetail
+  namespace: prodcatalog-ns-lattice
+  labels:
+    app: proddetail
+spec:
+  ports:
+    - name: "http"
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: proddetail
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prodcatalog
+  namespace: prodcatalog-ns-lattice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prodcatalog
+  template:
+    metadata:
+      labels:
+        app: prodcatalog
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      serviceAccountName: prodcatalog-lattice-sa
+      containers:
+        - name: prodcatalog
+          image: "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/eks-app-mesh-to-vpc-lattice/product_catalog:${APP_VERSION}"
+          imagePullPolicy: Always
+          env:
+            - name: AGG_APP_URL
+              value: "http://proddetail.prodcatalog-ns-lattice.svc.cluster.local:3000/catalogDetail"
+            - name: AWS_REGION
+              value: "${AWS_REGION}"
+            - name: OTEL_PROPAGATORS
+              value: xray
+            - name: OTEL_PYTHON_ID_GENERATOR
+              value: xray
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.namespace=eks-app-mesh-to-vpc-lattice,service.name=prodcatalog
+          livenessProbe:
+            httpGet:
+              path: /products/ping
+              port: 5000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /products/ping
+              port: 5000
+            successThreshold: 3
+          ports:
+            - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prodcatalog
+  namespace: prodcatalog-ns-lattice
+  labels:
+    app: prodcatalog
+spec:
+  ports:
+    - name: "http"
+      port: 5000
+      targetPort: 5000
+  selector:
+    app: prodcatalog
+---

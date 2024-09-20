@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prodcatalog
+  namespace: prodcatalog-ns
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: prodcatalog
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2024-09-03T21:10:41-07:00"
+        sidecar.opentelemetry.io/inject: "true"
+      creationTimestamp: null
+      labels:
+        app: prodcatalog
+    spec:
+      containers:
+      - args:
+        - --unsigned-payload
+        - --log-failed-requests
+        - -v
+        - --log-signing-process
+        - --name
+        - vpc-lattice-svcs
+        - --region
+        - UPDATE AWS REGION
+        - --upstream-url-scheme
+        - http
+        image: public.ecr.aws/aws-observability/aws-sigv4-proxy:latest
+        imagePullPolicy: Always
+        name: sigv4proxy
+        ports:
+        - containerPort: 8080
+          name: proxy
+          protocol: TCP
+        resources: {}
+        securityContext:
+          runAsUser: 101
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      - env:
+        - name: AGG_APP_URL
+          value: http://proddetail-prodcatalog-ns-03c1a9e923710c660.7d67968.vpc-lattice-svcs.<Region>.on.aws/catalogdetail
+        - name: AWS_REGION
+          value: UPDATE AWS REGION
+        - name: OTEL_PROPAGATORS
+          value: xray
+        - name: OTEL_PYTHON_ID_GENERATOR
+          value: xray
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: service.namespace=eks-app-mesh-demo,service.name=prodcatalog
+        image: xxxxxxxx.dkr.ecr.<AWS-Region>.amazonaws.com/eks-app-mesh-demo/product_catalog:1.0
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /products/ping
+            port: 5000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: prodcatalog
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /products/ping
+            port: 5000
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 3
+          timeoutSeconds: 1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - |
+          iptables -t nat -N EGRESS_PROXY; iptables -t nat -A OUTPUT -p tcp -d 169.254.171.0/24 -j EGRESS_PROXY; iptables -t nat -A EGRESS_PROXY -m owner --uid-owner 101 -j RETURN; iptables -t nat -A EGRESS_PROXY -p tcp -j REDIRECT --to-ports 8080;
+        image: public.ecr.aws/d2c6w7a3/iptables
+        imagePullPolicy: Always
+        name: iptables-init
+        resources: {}
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: prodcatalog-envoy-proxies
+      serviceAccountName: prodcatalog-envoy-proxies
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2024-09-17T23:38:08Z"
+    lastUpdateTime: "2024-09-17T23:38:08Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2024-09-04T03:58:01Z"
+    lastUpdateTime: "2024-09-18T04:10:23Z"
+    message: ReplicaSet "prodcatalog-997fd7778" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 5
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

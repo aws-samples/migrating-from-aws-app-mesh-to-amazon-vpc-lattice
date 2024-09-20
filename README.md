@@ -1,4 +1,4 @@
-# amazon-vpc-lattice-blog
+# Migration from AWS App Mesh to Amazon VPC Lattice
 
 
 ## Getting started

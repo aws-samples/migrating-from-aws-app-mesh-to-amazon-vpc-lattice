@@ -13,8 +13,8 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 
 ```bash
     cd ~
-    git clone https://github.com/{UPDATE_REPO_DETAILS}/{UPDATE_REPO_DETAILS}.git
-    cd {UPDATE_REPO_DETAILS}
+    git clone https://github.com/aws-samples/migrating-from-aws-app-mesh-to-amazon-vpc-lattice.git
+    cd migrating-from-aws-app-mesh-to-amazon-vpc-lattice
     git clone https://github.com/aws-containers/eks-app-mesh-polyglot-demo
 ```
 ### ************************ TO DO End *******************

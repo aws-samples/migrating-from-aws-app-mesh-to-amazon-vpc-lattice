@@ -5,7 +5,7 @@ For the purpose of this blog and to demostrate IAM authentication, we apply auth
 You can start with blocking all the traffic to the service.
 For the service `proddetail-prodcatalog-ns` under **Amazon VPC Lattice**, click on the **service** and go **Access** Tab. Click on **Edit access settings**, in the subsequent screen select **AWS IAM**, then **select Apply policy template** > **Allow only authenticated access**. Then choose **Save** changes.
 
-<img src="screenshots/Pic-1.png">
+<img src="images/edit-access-settings.png">
 
 Now lets try accessing the service from prodcatag pod.
 

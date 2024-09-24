@@ -1,6 +1,6 @@
 ## Amazon VPC lattice Configuration files
 
-THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of polyglot application leveraging AppMesh to Amazon VPC lattice.
+This folder contains sample HttpRoute and TargetGroupPolicy for the migration of polyglot application leveraging AppMesh to Amazon VPC lattice.
 
 
 #### NOTE: These steps are to build a NEW namespace, deploy the app and configure it to use Amazon VPC lattice.
@@ -9,7 +9,7 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 - **If you want to do the IN-PLACE migration, without building a new namespace and re-deployment of infra. please [follow these steps](In-place-migration-steps.md)**
 
 
-**Step 1: Clone 2 required repositories to your local workspace with following commands:**
+**Step 1: ###Optional### - Only required, if you don't already have the repositories cloned. Git clone 2 required repositories to your local workspace with following commands:**
 
 ```bash
     cd ~
@@ -84,10 +84,10 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
     export VPCLatticeControllerIAMPolicyArn=$(aws iam list-policies --query 'Policies[?PolicyName==`VPCLatticeControllerIAMPolicy`].Arn' --output text)
 ```
 
-**Step 7: ###Optional### - Only required, if you don't already have it. Create a Namespace named aws-application-networking-system. it comes with label control-plane: gateway-api-controller**
+**Step 7: Create a Namespace named aws-application-networking-system. it comes with label control-plane: gateway-api-controller**
 
 ```bash
-    kubectl apply -f https://raw.githubusercontent.com/aws/aws-application-networking-k8s/main/files/controller-installation/deploy-namesystem.yaml
+    kubectl get ns |grep -q ^aws-application-networking-system || kubectl apply -f https://raw.githubusercontent.com/aws/aws-application-networking-k8s/main/files/controller-installation/deploy-namesystem.yaml
 ```
 
 **Step 8: ###Optional### - Only required, if you don't already have it, please [set up the Amazon EKS Pod Identity Agent](https://docs.aws.amazon.com/eks/latest/userguide/pod-id-agent-setup.html). Confirm that the EKS Pod Identity Agent pods are running on your cluster.**
@@ -145,7 +145,7 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
     export VPCLatticeProdcatalogIAMRoleArn=$(aws iam list-roles --query 'Roles[?RoleName==`VPCLatticeIAMRoleForProdcatalog`].Arn' --output text)
 ```
 
-**Step 13: ###Optional### - Only required, if you don't already have it for Amazon VPC lattice Controller. Create the pod identity association with Amazon VPC lattice Controller Service Account.**
+**Step 13: Create the pod identity association with Amazon VPC lattice Controller Service Account.**
 
 ```bash
     aws eks create-pod-identity-association --cluster-name $CLUSTER_NAME --role-arn $VPCLatticeControllerIAMRoleArn --namespace aws-application-networking-system --service-account gateway-api-controller

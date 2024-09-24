@@ -270,9 +270,9 @@ aws ecr get-login-password --region us-west-2 | docker login --username AWS --pa
 ```bash
     FE_POD=$(kubectl -n  prodcatalog-ns get pod -l app=frontend-node -o jsonpath='{.items[].metadata.name}')
     
-    kubectl exec $FE_POD -n  prodcatalog-ns -it -- curl http://proddetail.prodcatalog-ns.svc.cluster.local:3000/catalogDetail 
+    kubectl exec $FE_POD -c frontend-node -n  prodcatalog-ns -it -- curl http://proddetail.prodcatalog-ns.svc.cluster.local:3000/catalogDetail 
 
-    kubectl exec $FE_POD -n  prodcatalog-ns -it -- curl http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/ 
+    kubectl exec $FE_POD -c frontend-node -n  prodcatalog-ns -it -- curl http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/ 
 ```
 
 ## Meshify Microservices
@@ -333,7 +333,7 @@ done
 
 ```bash
     FE_POD=$(kubectl -n  prodcatalog-ns get pod -l app=frontend-node -o jsonpath='{.items[].metadata.name}')
-    kubectl exec $FE_POD -n  prodcatalog-ns -it -- curl -v http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/ 2>&1|grep -v Expire
+    kubectl exec $FE_POD -c frontend-node -n  prodcatalog-ns -it -- curl -v http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/ 2>&1|grep -v Expire
     
 
 

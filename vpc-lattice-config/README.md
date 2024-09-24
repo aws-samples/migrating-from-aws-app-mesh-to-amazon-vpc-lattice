@@ -3,9 +3,10 @@
 THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of polyglot application leveraging AppMesh to Amazon VPC lattice.
 
 
-- **These steps are to build a new namespace, deploy the app and configure it to use Amazon VPC lattice.**
+#### NOTE: These steps are to build a NEW namespace, deploy the app and configure it to use Amazon VPC lattice.
 
-- **If you want to do the in-place migration, without building a new namespace and re-deployment of infra. please [follow these steps](In-place-migration-steps.md)**
+
+- **If you want to do the IN-PLACE migration, without building a new namespace and re-deployment of infra. please [follow these steps](In-place-migration-steps.md)**
 
 
 **Step 1: Clone 2 required repositories to your local workspace with following commands:**
@@ -106,8 +107,11 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 **Step 10: Create the Namespace and a Service account in the namespace for PodIdentity. This account will be used by our application. let's make sure new Namespace doesn't have mesh related labels**
 
 ```bash
+    export oldns_name=prodcatalog-ns
+	export newns_name=prodcatalog-ns-lattice
+	alias oldns_cmd='sed "s/$newns_name/$oldns_name/g"'
     kubectl apply -f ./vpc-lattice-config/files/lattice-pod-service-account.yaml
-    kubectl label ns prodcatalog-ns --overwrite {mesh-,gateway-,appmesh.k8s.aws/sidecarInjectorWebhook-}
+    kubectl label ns $newns_name --overwrite {mesh-,gateway-,appmesh.k8s.aws/sidecarInjectorWebhook-}
 ```
 
 **Step 11: ###Optional### - Only required, if you don't already have it. Create a role with trust relationship policy for Amazon VPC lattice Controller.**
@@ -150,7 +154,7 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 **Step 14:  Create the pod identity association with Service Account.**
 
 ```bash
-    aws eks create-pod-identity-association --cluster-name $CLUSTER_NAME --role-arn $VPCLatticeProdcatalogIAMRoleArn --namespace prodcatalog-ns-lattice --service-account prodcatalog-lattice-sa
+    aws eks create-pod-identity-association --cluster-name $CLUSTER_NAME --role-arn $VPCLatticeProdcatalogIAMRoleArn --namespace $newns_name --service-account prodcatalog-lattice-sa
 ```
 
 **Step 15: let's deploy the application in new namespace.**
@@ -195,12 +199,12 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 
 ```bash
     kubectl apply -f ./vpc-lattice-config/files/product-catalog-gateway.yaml
-    kubectl wait --for=condition=Programmed gateway/product-catalog-lattice-gw -n prodcatalog-ns-lattice
+    kubectl wait --for=condition=Programmed gateway/product-catalog-lattice-gw -n $newns_name
 
     #Validate the gateway is created and 'PROGRAMMED' is set to 'True'
-    kubectl get gateway -n prodcatalog-ns-lattice
+    kubectl get gateway -n $newns_name
     # see the status details and reason. if you see a network in reason, it is PROGRAMMED correctly.
-    kubectl get gateway -n prodcatalog-ns-lattice -o jsonpath='{"Status: "}{.items[*].status.conditions[1].reason}{", "}{"Reason_or_DNS_Name: "}{.items[*].status.conditions[1].message}{"\n"}'
+    kubectl get gateway -n $newns_name -o jsonpath='{"Status: "}{.items[*].status.conditions[1].reason}{", "}{"Reason_or_DNS_Name: "}{.items[*].status.conditions[1].message}{"\n"}'
 ```
 
 **Step 20: Create a TargetGroupPolicy that tells Lattice how to properly perform health checks on our services.**
@@ -223,22 +227,24 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 
 ```bash
     # Find URL for "proddetail" service created by httproute
-    export GET_PRODDETAIL_URL=$(kubectl get -n prodcatalog-ns-lattice httproute proddetail-httproute -o jsonpath='{.metadata.annotations.application-networking\.k8s\.aws/lattice-assigned-domain-name}')
+    echo 'sleep 60; let vpc lattice assign domain names'
+    sleep 60
+    export GET_PRODDETAIL_URL=$(kubectl get -n $newns_name httproute proddetail-httproute -o jsonpath='{.metadata.annotations.application-networking\.k8s\.aws/lattice-assigned-domain-name}')
 
     # find the pod name in 'prodcatalog'
-    export GET_CATALOG_POD_NAME=$(kubectl get pods -n prodcatalog-ns-lattice -l app=prodcatalog -o jsonpath='{.items[].metadata.name}')
+    export GET_CATALOG_POD_NAME=$(kubectl get pods -n $newns_name -l app=prodcatalog -o jsonpath='{.items[].metadata.name}')
 
     # try connecting from 'prodcatalog' to 'proddetail', use output from prvious command to replace 'GET_PRODDETAIL_URL'
-    export CHECK_CONN_CATLOG_TO_PRODDETAIL=$(echo "kubectl -n prodcatalog-ns-lattice exec -it ${GET_CATALOG_POD_NAME} -c prodcatalog -- curl ${GET_PRODDETAIL_URL}:3000/catalogDetail 2>&1|jq -s") 
+    export CHECK_CONN_CATLOG_TO_PRODDETAIL=$(echo "kubectl -n $newns_name exec -it ${GET_CATALOG_POD_NAME} -c prodcatalog -- curl ${GET_PRODDETAIL_URL}:3000/catalogDetail 2>&1|jq -s") 
 
     # Find URL for "prodcatalog" service created by httproute
-    export GET_CATALOG_URL=$(kubectl get -n prodcatalog-ns-lattice httproute prodcatalog-httproute -o jsonpath='{.metadata.annotations.application-networking\.k8s\.aws/lattice-assigned-domain-name}')
+    export GET_CATALOG_URL=$(kubectl get -n $newns_name httproute prodcatalog-httproute -o jsonpath='{.metadata.annotations.application-networking\.k8s\.aws/lattice-assigned-domain-name}')
 
     # get inside "frontend-node" container and see if it can get data "prodcatalog" AppMesh service
-    export GET_FRONTEND_POD_NAME=$(kubectl get pods -n prodcatalog-ns-lattice -l app=frontend-node -o jsonpath='{.items[].metadata.name}')
+    export GET_FRONTEND_POD_NAME=$(kubectl get pods -n $newns_name -l app=frontend-node -o jsonpath='{.items[].metadata.name}')
 
     # try connecting from 'frontend-node' to 'prodcatalog', use output from prvious command to replace 'GET_CATALOG_URL'
-    export CHECK_CONN_FRONTEND_TO_CATALOG=$(echo "kubectl -n prodcatalog-ns-lattice exec -it ${GET_FRONTEND_POD_NAME} -c frontend-node -- curl ${GET_CATALOG_URL}:5000/products/ 2>&1|jq -s") 
+    export CHECK_CONN_FRONTEND_TO_CATALOG=$(echo "kubectl -n $newns_name exec -it ${GET_FRONTEND_POD_NAME} -c frontend-node -- curl ${GET_CATALOG_URL}:5000/products/ 2>&1|jq -s") 
 
 ```
 
@@ -267,13 +273,17 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 
 ```bash
     echo "update 'frontend' pod to use '$GET_CATALOG_URL' and 'prodcatalog' to use '$GET_PRODDETAIL_URL'"
-    sed -e "s/prodcatalog.prodcatalog-ns-lattice.svc.cluster.local/$GET_CATALOG_URL/g" -e "s/proddetail.prodcatalog-ns-lattice.svc.cluster.local/$GET_PRODDETAIL_URL/g" ./vpc-lattice-config/files/base_app.yaml |envsubst | kubectl apply -f -
+    sed -e "s/prodcatalog.$newns_name.svc.cluster.local/$GET_CATALOG_URL/g" -e "s/proddetail.$newns_name.svc.cluster.local/$GET_PRODDETAIL_URL/g" ./vpc-lattice-config/files/base_app.yaml |envsubst | kubectl apply -f -
 ```
 
 **Step 25: check if you can connect. We are using kubectl port-forward to access the frontend**
 
 ```bash
-    kubectl -n prodcatalog-ns-lattice port-forward svc/frontend-node 8443:9000
+    kubectl -n $newns_name port-forward svc/frontend-node 8443:9000
+    # alternatively you can deploy an LB and test app on this LB too.
+    envsubst <vpc-lattice-config/files/lattice-nlb.yaml|kubectl apply -f -
+    sleep 30
+    curl `kubectl get -n $newns_name svc/frontend-node-lb -o jsonpath='{.status.loadBalancer.ingress[].hostname}'`
 ```
 
 **Step 26: login to registery. Create, Validate and push catalog_detail v2 image to ECR**
@@ -299,8 +309,8 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
     envsubst < ./vpc-lattice-config/files/canary.yaml | kubectl apply -f -
 ```
 
-**Step 28: Set variable to V2 and test traffic again using commands from Step 19 and check frontend using step 22.**
+**Step 28: Set variable to V2 and test traffic again using commands from Step 22 and check frontend using step 23.**
 
 ```bash
-    export GET_PRODDETAIL_URL=$(kubectl get -n prodcatalog-ns-lattice httproute proddetail-httproute -o jsonpath='{.metadata.annotations.application-networking\.k8s\.aws/lattice-assigned-domain-name}')
+    export GET_PRODDETAIL_URL=$(kubectl get -n $newns_name httproute proddetail-httproute -o jsonpath='{.metadata.annotations.application-networking\.k8s\.aws/lattice-assigned-domain-name}')
 ```

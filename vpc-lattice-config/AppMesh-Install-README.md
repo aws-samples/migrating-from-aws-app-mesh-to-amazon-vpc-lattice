@@ -62,7 +62,7 @@ This script will install:
     eksctl version                    
     
     >>>>>>>>>>
-    0.176.0
+    0.190.0
 ```
 
 **Install kubectl**
@@ -245,8 +245,9 @@ aws ecr get-login-password --region us-west-2 | docker login --username AWS --pa
 
 **Deploy the services to EKS**
 ```bash
+    export oldns_name=prodcatalog-ns
     export APP_VERSION=1.0
-    cat eks-app-mesh-polyglot-demo/deployment/base_app.yaml|envsubst| kubectl apply -f -
+    sed -e 's/eks-app-mesh-demo\//eks-app-mesh-to-vpc-lattice\//g' -e "s/service.namespace=eks-app-mesh-demo/service.namespace=$oldns_name/g" eks-app-mesh-polyglot-demo/deployment/base_app.yaml |envsubst | kubectl apply -f -
 ```
 
 **Get the deployment details**
@@ -268,16 +269,10 @@ aws ecr get-login-password --region us-west-2 | docker login --username AWS --pa
  
 ```bash
     FE_POD=$(kubectl -n  prodcatalog-ns get pod -l app=frontend-node -o jsonpath='{.items[].metadata.name}')
-    kubectl exec $FE_POD -n  prodcatalog-ns -it -- curl http://proddetail.prodcatalog-ns.svc.cluster.local:3000/catalogDetail
     
-    >>>>>
-    {"version":"1","vendors":["ABC.com"]}%
+    kubectl exec $FE_POD -n  prodcatalog-ns -it -- curl http://proddetail.prodcatalog-ns.svc.cluster.local:3000/catalogDetail 2>&1|jq -s
 
-    kubectl exec $FE_POD -n  prodcatalog-ns -it -- curl http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/
-
-    >>>>>
-    {"products": {}, "details": {"version": "1", "vendors": ["ABC.com"]}}
-
+    kubectl exec $FE_POD -n  prodcatalog-ns -it -- curl http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/ 2>&1|jq -s
 ```
 
 ## Meshify Microservices
@@ -460,7 +455,7 @@ curl: (6) Could not resolve host: af202a3281c2147c3a9d399f382973e7-8b13103ffbc20
 ```
 **Deploy the new service and mesh resources for version 2 service**
 ```bash
-    cat eks-app-mesh-polyglot-demo/deployment/canary.yaml|envsubst|kubectl apply -f -
+    sed -e 's/eks-app-mesh-demo\//eks-app-mesh-to-vpc-lattice\//g' -e "s/service.namespace=eks-app-mesh-demo/service.namespace=$oldns_name/g" eks-app-mesh-polyglot-demo/deployment/canary.yaml|envsubst|kubectl apply -f -
 ```
 
 **Check the resources for service version 2**

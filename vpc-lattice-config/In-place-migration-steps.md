@@ -183,8 +183,6 @@ Try accessing the application using Ingress LB URL.
 	kubectl -n $oldns_name get service/ingress-gw -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
-##### Validate the app and think about replacing the Service Account too. It is leftover from Step 5: Step 15 from main [README.md](README.md) file uses new service account `prodcatalog-lattice-sa`.
-
 **Step 18: Cleanup, delete all the appmesh related compoments**
 ```bash
 	for appmesh_svc in `kubectl get all -n $oldns_name |awk '/appmesh/ {print $1}'`
@@ -193,3 +191,5 @@ Try accessing the application using Ingress LB URL.
 	done
 	kubectl -n $oldns_name delete deployment.apps/ingress-gw
 	kubectl delete meshes prodcatalog-mesh --wait=0
+```
+##### Validate the app and think about replacing the Service Account too. It is leftover from Step 5: Step 15 from main [README.md](README.md) file uses new service account `prodcatalog-lattice-sa`.

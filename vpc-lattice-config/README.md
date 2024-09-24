@@ -8,7 +8,6 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 - **If you want to do the in-place migration, without building a new namespace and re-deployment of infra. please [follow these steps](In-place-migration-steps.md)**
 
 
-### ************************ TO DO Start *******************
 **Step 1: Clone 2 required repositories to your local workspace with following commands:**
 
 ```bash
@@ -17,7 +16,6 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
     cd migrating-from-aws-app-mesh-to-amazon-vpc-lattice
     git clone https://github.com/aws-containers/eks-app-mesh-polyglot-demo
 ```
-### ************************ TO DO End *******************
 
 ###### PreRequisite
 **Step 2: Check if AWS_REGION, ACCOUNT_ID and, CLUSTER_NAME are set correctly**

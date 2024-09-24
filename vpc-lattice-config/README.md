@@ -74,7 +74,7 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 **Setp 6: ###Optional### - Only required, if you don't already have Setup IAM policy for Amazon VPC lattice Controller**
 
 ```bash
-    curl https://raw.githubusercontent.com/aws/aws-application-networking-k8s/main/files/controller-installation/recommended-inline-policy.json  -o vpc-lattice-config/files/vpc-lattice-config/files/recommended-inline-policy.json
+    curl https://raw.githubusercontent.com/aws/aws-application-networking-k8s/main/files/controller-installation/recommended-inline-policy.json  -o vpc-lattice-config/files/recommended-inline-policy.json
 
     aws iam create-policy \
        --policy-name VPCLatticeControllerIAMPolicy \
@@ -103,10 +103,11 @@ THis folder contains sample HttpRoute and TargetGroupPolicy for the migration of
     kubectl apply -f ./vpc-lattice-config/files/gateway-api-controller-service-account.yaml
 ```
 
-**Step 10: Create the Namespace and a Service account in the namespace for PodIdentity. This account will be used by our application.**
+**Step 10: Create the Namespace and a Service account in the namespace for PodIdentity. This account will be used by our application. let's make sure new Namespace doesn't have mesh related labels**
 
 ```bash
     kubectl apply -f ./vpc-lattice-config/files/lattice-pod-service-account.yaml
+    kubectl label ns prodcatalog-ns --overwrite {mesh-,gateway-,appmesh.k8s.aws/sidecarInjectorWebhook-}
 ```
 
 **Step 11: ###Optional### - Only required, if you don't already have it. Create a role with trust relationship policy for Amazon VPC lattice Controller.**

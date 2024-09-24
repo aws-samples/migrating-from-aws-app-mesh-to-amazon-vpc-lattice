@@ -19,7 +19,12 @@ Before you start on this project, ensure you have all the prerequites mentioned 
 **Clone Git repo**
 
 ```bash
+git clone https://github.com/aws-samples/migrating-from-aws-app-mesh-to-amazon-vpc-lattice.git
+
+cd migrating-from-aws-app-mesh-to-amazon-vpc-lattice
+
 git clone https://github.com/aws-containers/eks-app-mesh-polyglot-demo.git
+
 ```
 
 #### NOTE: Install `brew, jq, eksctl, kubectl` accroding to your Operating System. Below given commands are for MacOS.
@@ -474,3 +479,5 @@ curl: (6) Could not resolve host: af202a3281c2147c3a9d399f382973e7-8b13103ffbc20
 + Now click on the button "Click to see Canary" (may be couple of times), you should see call to version 2 Catalog Detail service
 
      ![\[Image NOT FOUND\]](images/canary.png)
+
++ Now you have AppMesh running for polyglot-demo app. You can continue to work [VPC Lattice migration](../README.md) based on one of the approaches.

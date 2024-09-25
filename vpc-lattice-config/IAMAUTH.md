@@ -66,7 +66,7 @@ The Amazon VPC Lattice  service itself needs to allow access from this role. You
 }
 ```
 
-After this is done, we are going to call our service via product catalog deployment with a proxy container. THe proxy container will listen on port 8080 and run as user 101. Now we would like to intercept traffic from the main app, use the iptables utility to route the traffic connecting to Amazon VPC Lattice CIDR 169.254.171.0/24 to EGRESS_PROXY chain, and redirect the traffic to local port 8080. The complete YAML manifest is prodcatalog-deploy-IAM.yaml present in the repository. Make sure to update the account number and the region in the above yaml.
+After this is done, we are going to call our service via product catalog deployment with a proxy container. The proxy container will listen on port 8080 and run as user 101. Now we would like to intercept traffic from the main app, use the iptables utility to route the traffic connecting to Amazon VPC Lattice CIDR 169.254.171.0/24 to EGRESS_PROXY chain, and redirect the traffic to local port 8080. The complete YAML manifest is prodcatalog-deploy-IAM.yaml present in the repository. Make sure to update the account number and the region in the above yaml.
 
 Update the deployment
 

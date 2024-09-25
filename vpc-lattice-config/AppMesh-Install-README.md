@@ -59,8 +59,8 @@ This script will install:
     >>>>>>>>>>
     ==> Installing eksctl from weaveworks/tap
 
-    eksctl version                    
-    
+    eksctl version
+
     >>>>>>>>>>
     0.190.0
 ```
@@ -89,22 +89,22 @@ This script will install:
 **Create EKS Cluster**
 
 This command will create VPC, Subnets, EKS Cluster, Managed NodeGroup, Fargate Profile, Cloudwatch logging for controle plane, OIDC Provider,  Service Account, IAM Role for Service Account, Namespace, kubeconfig setup
-    
+
 ```bash
     export AWS_REGION=us-west-2
     export CLUSTER_NAME=eksctlappmesh2lattice
     export ACCOUNT_ID=<YOUR_ACCOUNT_ID_HERE>
-    
+
     cat vpc-lattice-config/files/clusterconfig.yaml |envsubst| eksctl create cluster -f -
 ```
 
 **Confirm the Nodegroup in the EKS cluster**
 
 ```bash
-    kubectl get nodes 
+    kubectl get nodes
 ```
 
-**Go to Console and check the cluster information**  
+**Go to Console and check the cluster information**
 
   + You can see nodegroup and fargateprofile created in the EKS cluster
 
@@ -120,7 +120,7 @@ This command will create VPC, Subnets, EKS Cluster, Managed NodeGroup, Fargate P
 
   + Create IAM policy used by envoy
 
-```bash    
+```bash
 aws iam create-policy \
     --policy-name ProdEnvoyNamespaceIAMPolicy \
     --policy-document file://eks-app-mesh-polyglot-demo/deployment/envoy-iam-policy.json
@@ -136,30 +136,30 @@ eksctl update iamserviceaccount --cluster $CLUSTER_NAME \
 ```
 
   + Ensure the below AppMesh policy is available in worker nodegroup role.(This policy will be added automatically to the role during cluster creation)
-  
+
      ![\[Image NOT FOUND\]](images/appmeshpolicy.png)
-  
-  + Confirm if the namespace has service account and has the correct role. (This is created during cluster creation) 
+
+  + Confirm if the namespace has service account and has the correct role. (This is created during cluster creation)
 
 ```bash
-    kubectl describe serviceaccount prodcatalog-envoy-proxies -n prodcatalog-ns  
-```   
+    kubectl describe serviceaccount prodcatalog-envoy-proxies -n prodcatalog-ns
+```
 
   + Check in the console for all the policies for this role. (This role with all the policies will be added during cluster creation)
-  
+
      ![\[Image NOT FOUND\]](images/sa-role.png)
-        
+
 **Install App Mesh Helm Chart**
 
 ```bash
     helm repo add eks https://aws.github.io/eks-charts
-    kubectl apply -k "https://github.com/aws/eks-charts/stable/appmesh-controller/crds?ref=master"    
+    kubectl apply -k "https://github.com/aws/eks-charts/stable/appmesh-controller/crds?ref=master"
 ```
 
 **Confirm all the resources are created in the App Mesh**
 
 ```bash
-    kubectl get crds | grep appmesh    
+    kubectl get crds | grep appmesh
 ```
 
 **Create App Mesh Namespace**
@@ -192,7 +192,7 @@ eksctl create iamserviceaccount \
 ```bash
 helm upgrade -i appmesh-controller eks/appmesh-controller \
  --namespace appmesh-system \
- --set region=us-west-2 \
+ --set region=$AWS_REGION \
  --set serviceAccount.create=false \
  --set serviceAccount.name=appmesh-controller \
  --set tracing.enabled=true \
@@ -210,7 +210,7 @@ helm upgrade -i appmesh-controller eks/appmesh-controller \
 **Confirm all the resources are created in appmesh-system mamespace and pods are running**
 
 ```bash
-    kubectl -n appmesh-system get all 
+    kubectl -n appmesh-system get all
 ```
 
 **Go to Console and check the App Mesh information**
@@ -225,7 +225,7 @@ helm upgrade -i appmesh-controller eks/appmesh-controller \
 **Login to ECR**
 
 ```bash
-aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com 
+aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 ```
 
 **Build Backend Product Catalog (python) Service, Build Backend Product Detail (NodeJs) Service, Build Frontend (NodeJs) Service**
@@ -233,7 +233,7 @@ aws ecr get-login-password --region us-west-2 | docker login --username AWS --pa
     PROJECT_NAME=eks-app-mesh-to-vpc-lattice
     export APP_VERSION=1.0
     cd eks-app-mesh-polyglot-demo
-    for app in catalog_detail product_catalog frontend_node; 
+    for app in catalog_detail product_catalog frontend_node;
         do
             aws ecr describe-repositories --repository-name $PROJECT_NAME/$app >/dev/null 2>&1 || \
             aws ecr create-repository --repository-name $PROJECT_NAME/$app >/dev/null
@@ -266,13 +266,13 @@ aws ecr get-login-password --region us-west-2 | docker login --username AWS --pa
 **Testing the Connectivity between Fargate and Nodegroup pods**
  + Bash into frontend pod container
  + curl to fargate prodcatalog backend and you should the response
- 
+
 ```bash
     FE_POD=$(kubectl -n  prodcatalog-ns get pod -l app=frontend-node -o jsonpath='{.items[].metadata.name}')
-    
-    kubectl exec $FE_POD -c frontend-node -n  prodcatalog-ns -it -- curl http://proddetail.prodcatalog-ns.svc.cluster.local:3000/catalogDetail 
 
-    kubectl exec $FE_POD -c frontend-node -n  prodcatalog-ns -it -- curl http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/ 
+    kubectl exec $FE_POD -c frontend-node -n  prodcatalog-ns -it -- curl http://proddetail.prodcatalog-ns.svc.cluster.local:3000/catalogDetail
+
+    kubectl exec $FE_POD -c frontend-node -n  prodcatalog-ns -it -- curl http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/
 ```
 
 ## Meshify Microservices
@@ -334,7 +334,7 @@ done
 ```bash
     FE_POD=$(kubectl -n  prodcatalog-ns get pod -l app=frontend-node -o jsonpath='{.items[].metadata.name}')
     kubectl exec $FE_POD -c frontend-node -n  prodcatalog-ns -it -- curl -v http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/ 2>&1|grep -v Expire
-    
+
 
 
     >>>>>>>>
@@ -376,8 +376,8 @@ Now since we have verified the communication between nodegroup pod and fargate p
 
 **Check if the request to the Ingress Gateway is going from envoy**
 ```bash
-    curl -v `kubectl get svc ingress-gw -n prodcatalog-ns -o jsonpath="{.status.loadBalancer.ingress[*].hostname}"`
-    
+    curl -v $(kubectl get svc ingress-gw -n prodcatalog-ns -o jsonpath="{.status.loadBalancer.ingress[*].hostname}")
+
 
 
     >>>>>>>>
@@ -415,9 +415,9 @@ curl: (6) Could not resolve host: af202a3281c2147c3a9d399f382973e7-8b13103ffbc20
 **Testing the App Mesh Deployment**
 
    + Get the Loadbalancer endpoint that Virtual Gateway is exposed
-    
+
 ```bash
-    kubectl get svc ingress-gw -n prodcatalog-ns -o jsonpath="{.status.loadBalancer.ingress[*].hostname}"  
+    kubectl get svc ingress-gw -n prodcatalog-ns -o jsonpath="{.status.loadBalancer.ingress[*].hostname}"
 ```
 
 + Browse the Loadbalancer endpoint and you should see the frontend application loaded in your browser
@@ -431,7 +431,7 @@ curl: (6) Could not resolve host: af202a3281c2147c3a9d399f382973e7-8b13103ffbc20
     ![\[Image NOT FOUND\]](images/post2.png)
 
 ## Canary Deployment
-   + Now lets deploy a new version (version 2) of Product Detail backend service 
+   + Now lets deploy a new version (version 2) of Product Detail backend service
    + And change the ProdDetail Virtual Router to route traffic 50% to version 1 and 50% to version 2
 
    ![\[Image NOT FOUND\]](images/canary1.png)
@@ -462,7 +462,7 @@ curl: (6) Could not resolve host: af202a3281c2147c3a9d399f382973e7-8b13103ffbc20
 
 ```bash
     kubectl get all  -n prodcatalog-ns -l app=proddetail2
-    kubectl get virtualnode,virtualrouter -n prodcatalog-ns    
+    kubectl get virtualnode,virtualrouter -n prodcatalog-ns
 ```
 
 **Test the Canary Deployment**

@@ -1,8 +1,10 @@
 ### In-Place migration steps - Replace AppMesh with Amazon VPC lattice. 
-These steps differ from main [README.md](README.md) file, which is focused on building a differnt namespace to deploy app.
 
-**Note**: After Amazon VPC lattice services are configured for the polyglot application. Update the lattice service URL in the deployment (base_app.yaml) as arguments in the environment variables.
-
+######*Note1: These steps differ from main [README.md](README.md) file, which is focused on building a differnt namespace to deploy app.*
+-------
+######*Note2: We assume you have completed the steps in [AppMesh-Install-README.md](AppMesh-Install-README.md) before proceeding.*
+------
+#
 **Step 1: Export the variables and start following after completeing 9 steps from [README.md](README.md) file.**
 
 ```bash
@@ -183,7 +185,7 @@ Try accessing the application using Ingress LB URL.
 	kubectl -n $oldns_name get service/ingress-gw -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
-**Step 18: Cleanup, delete all the appmesh related compoments**
+**Step 18: AppMesh Cleanup: delete all the appmesh related compoments**
 ```bash
 	for appmesh_svc in `kubectl get all -n $oldns_name |awk '/appmesh/ {print $1}'`
 	  do
@@ -192,4 +194,19 @@ Try accessing the application using Ingress LB URL.
 	kubectl -n $oldns_name delete deployment.apps/ingress-gw
 	kubectl delete meshes prodcatalog-mesh --wait=0
 ```
-##### Validate the app and think about replacing the Service Account too. It is leftover from Step 5: Step 15 from main [README.md](README.md) file uses new service account `prodcatalog-lattice-sa`.
+######*Validate the app and think about replacing the Service Account too. It is leftover from Step 5: Step 15 from main [README.md](README.md) file uses new service account `prodcatalog-lattice-sa`.*
+
+-------
+**Step 19: Cleanup for EKS infrastructure**
+Once you have a solid understanding of the process and are satisfied with your testing on the EKS cluster created as part of the [AppMesh-Install-README.md](AppMesh-Install-README.md) steps, be sure to delete the resources to avoid future charges. You can do this by following the cleanup section of the EKS Blueprints pattern or by executing the following comamnd:
+
+```bash
+bash vpc-lattice-config/files/latticeblogcleanup.sh
+```
+
+###Conclusion:
++ By following the steps outlined in this guide, you can seamlessly transition your microservices architecture while maintaining service reliability and improving operational efficiency. 
++ Migrating from AWS App Mesh to Amazon VPC Lattice provides a robust solution for managing application networking at scale, offering enhanced connectivity, load balancing, and security features. 
++ Be sure to explore the repository for more advanced use cases mentioned in [README.md](../README.md)
++ Remember to clean up any resources once you're done testing to avoid unnecessary charges.
++ Please refer back to the blog using [this](link_to_be_added_here) link.

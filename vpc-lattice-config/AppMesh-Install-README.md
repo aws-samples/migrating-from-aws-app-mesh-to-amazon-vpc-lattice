@@ -1,5 +1,7 @@
 # Polyglot Microservices Architecture using EKS and App Mesh
 
+We are using this app as an example for migration from AppMesh to VPC Lattice.
+
 Reference Implementation to show how you can use AWS managed services like EKS, Fargate and App Mesh to build cloud native microservices architecture and use Cloudwatch and X-Ray to perform the monitoring and observability\.
 
 ![\[Image NOT FOUND\]](images/architecture.png)
@@ -18,6 +20,7 @@ Before you start on this project, ensure you have all the prerequites mentioned 
 
 **Clone Git repo**
 
+######*Note: We are intentionally cloning the second repository inside the first one.*
 ```bash
 git clone https://github.com/aws-samples/migrating-from-aws-app-mesh-to-amazon-vpc-lattice.git
 

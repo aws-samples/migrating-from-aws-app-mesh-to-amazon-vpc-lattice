@@ -3,20 +3,28 @@
 
 ## Getting started
 
-To follow this blog effectively, clone the entire repository. The application referenced in this blog is located in [eks-app-mesh-polyglot-demo](https://github.com/aws-containers/eks-app-mesh-polyglot-demo) repository, and all the necessary configuration files for the migration to Amazon VPC Lattice is present in [vpc-lattice-config](vpc-lattice-config) directory.
+This document is designed to give you an overview of the migration process. You can use this example as a reference to adapt the steps for your own microservices applications migration.
 
-It is assumed that you already have an application integrated with App Mesh. The intention of this blog is to just give you an idea of how the migration process will look like.
+#### Step 1: Setup sample application on a new cluster
+* To follow along, set up the application as mentioned in [AppMesh-Install-README.md](vpc-lattice-config/AppMesh-Install-README.md) before proceeding with the migration steps.
 
-However, if you are using this blog to learn the migration process and need to follow along, set up the application as mentioned in [AppMesh-Install-README.md](vpc-lattice-config/AppMesh-Install-README.md) before proceeding with the migration steps.
 
-We have provided steps for 2 possible approaches:
-* [1. New deployment in a new namespace](vpc-lattice-config/README.md)
-#
-* [2. In-Place migration](vpc-lattice-config/In-place-migration-steps.md)
-#
-Additional topics:
-* [Securing the network and implementing AWS IAM authentication with Amazon VPC Lattice and Amazon EKS](vpc-lattice-config/IAMAUTH.md)
+The application referenced in the [blog](link_to_be_added_here) is located in [eks-app-mesh-polyglot-demo](https://github.com/aws-containers/eks-app-mesh-polyglot-demo) repository. All the necessary configuration files and steps for the migration to Amazon VPC Lattice are provided in [vpc-lattice-config](vpc-lattice-config) directory.
 
+#### Migration Approach
+We have outlined steps for 2 possible approaches but are using 1st approach (In-Place migration) as mentioned [blog](link_to_be_added_here).
+######*Note: Scripts and steps in outlined in both apparoaches assume that you already have completed steps mentioned in [AppMesh-Install-README.md](vpc-lattice-config/AppMesh-Install-README.md)*
++ [1. In-Place migration](vpc-lattice-config/In-place-migration-steps.md)
+
+######
++ [2. New deployment in a new namespace](vpc-lattice-config/README.md).
+
+#### Additional topics:
++ [Securing the network and implementing AWS IAM authentication with Amazon VPC Lattice and Amazon EKS](vpc-lattice-config/IAMAUTH.md)
+
++ [Secure Cross-Cluster Communication in EKS with VPC Lattice and Pod Identity IAM Session Tags](https://aws.amazon.com/blogs/containers/secure-cross-cluster-communication-in-eks-with-vpc-lattice-and-pod-identity-iam-session-tags/)
+
++ [Amazon VPC Lattice user guide](https://docs.aws.amazon.com/vpc-lattice/latest/ug/what-is-vpc-lattice.html)
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.

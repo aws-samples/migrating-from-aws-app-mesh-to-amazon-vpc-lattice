@@ -6,11 +6,11 @@ This folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 #### NOTE: These steps are to build a NEW namespace, deploy the app and configure it to use Amazon VPC lattice.
 
 
-- **If you want to do the IN-PLACE migration, without building a new namespace and re-deployment of infra. please [follow these steps](In-place-migration-steps.md)**
+- **If you want to do the In-Place migration, without building a new namespace and re-deployment of infra. please [follow these steps](In-place-migration-steps.md)**
 
 
 **Step 1: ###Optional### - Only required, if you don't already have the repositories cloned. Git clone 2 required repositories to your local workspace with following commands:**
-
+######*Note: We are intentionally cloning the second repository inside the first one.*
 ```bash
     cd ~
     git clone https://github.com/aws-samples/migrating-from-aws-app-mesh-to-amazon-vpc-lattice.git
@@ -314,3 +314,17 @@ This folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 ```bash
     export GET_PRODDETAIL_URL=$(kubectl get -n $newns_name httproute proddetail-httproute -o jsonpath='{.metadata.annotations.application-networking\.k8s\.aws/lattice-assigned-domain-name}')
 ```
+-------
+**Step 29: Cleanup for EKS infrastructure**
+Once you have a solid understanding of the process and are satisfied with your testing on the EKS cluster created as part of the [AppMesh-Install-README.md](AppMesh-Install-README.md) steps, be sure to delete the resources to avoid future charges. You can do this by following the cleanup section of the EKS Blueprints pattern or by executing the following comamnd:
+
+```bash
+bash vpc-lattice-config/files/latticeblogcleanup.sh
+```
+
+###Conclusion:
++ By following the steps outlined in this guide, you can seamlessly transition your microservices architecture while maintaining service reliability and improving operational efficiency. 
++ Migrating from AWS App Mesh to Amazon VPC Lattice provides a robust solution for managing application networking at scale, offering enhanced connectivity, load balancing, and security features. 
++ Be sure to explore the repository for more advanced use cases mentioned in [README.md](../README.md)
++ Remember to clean up any resources once you're done testing to avoid unnecessary charges.
++ Please refer back to the blog using [this](link_to_be_added_here) link.

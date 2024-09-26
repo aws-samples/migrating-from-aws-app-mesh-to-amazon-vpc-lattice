@@ -10,7 +10,8 @@ This folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 
 
 **Step 1: ###Optional### - Only required, if you don't already have the repositories cloned. Git clone 2 required repositories to your local workspace with following commands:**
-######*Note: We are intentionally cloning the second repository inside the first one.*
+
+###### *Note: We are intentionally cloning the second repository inside the first one.*
 ```bash
     cd ~
     git clone https://github.com/aws-samples/migrating-from-aws-app-mesh-to-amazon-vpc-lattice.git
@@ -322,7 +323,7 @@ Once you have a solid understanding of the process and are satisfied with your t
 bash vpc-lattice-config/files/latticeblogcleanup.sh
 ```
 
-###Conclusion:
+### Conclusion:
 + By following the steps outlined in this guide, you can seamlessly transition your microservices architecture while maintaining service reliability and improving operational efficiency. 
 + Migrating from AWS App Mesh to Amazon VPC Lattice provides a robust solution for managing application networking at scale, offering enhanced connectivity, load balancing, and security features. 
 + Be sure to explore the repository for more advanced use cases mentioned in [README.md](../README.md)

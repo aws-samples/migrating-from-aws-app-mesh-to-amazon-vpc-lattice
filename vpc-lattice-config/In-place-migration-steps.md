@@ -1,8 +1,8 @@
 ### In-Place migration steps - Replace AppMesh with Amazon VPC lattice. 
 
-**Note1: These steps differ from main [README.md](README.md) file, which is focused on building a differnt namespace to deploy app.**
+###### **Note1: These steps differ from main [README.md](README.md) file, which is focused on building a differnt namespace to deploy app.**
 -------
-**Note2: We assume you have completed the steps in [AppMesh-Install-README.md](AppMesh-Install-README.md) before proceeding.**
+###### **Note2: We assume you have completed the steps in [AppMesh-Install-README.md](AppMesh-Install-README.md) before proceeding.**
 ------
 #
 **Step 1: Export the variables and start following after completeing 9 steps from [README.md](README.md) file.**
@@ -204,7 +204,7 @@ Once you have a solid understanding of the process and are satisfied with your t
 bash vpc-lattice-config/files/latticeblogcleanup.sh
 ```
 
-###Conclusion:
+### Conclusion:
 + By following the steps outlined in this guide, you can seamlessly transition your microservices architecture while maintaining service reliability and improving operational efficiency. 
 + Migrating from AWS App Mesh to Amazon VPC Lattice provides a robust solution for managing application networking at scale, offering enhanced connectivity, load balancing, and security features. 
 + Be sure to explore the repository for more advanced use cases mentioned in [README.md](../README.md)

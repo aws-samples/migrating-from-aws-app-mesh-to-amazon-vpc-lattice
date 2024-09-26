@@ -20,7 +20,7 @@ Before you start on this project, ensure you have all the prerequites mentioned 
 
 **Clone Git repo**
 
-######*Note: We are intentionally cloning the second repository inside the first one.*
+###### *Note: We are intentionally cloning the second repository inside the first one.*
 ```bash
 git clone https://github.com/aws-samples/migrating-from-aws-app-mesh-to-amazon-vpc-lattice.git
 

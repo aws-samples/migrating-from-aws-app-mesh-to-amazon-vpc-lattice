@@ -1,8 +1,8 @@
 ### In-Place migration steps - Replace AppMesh with Amazon VPC lattice. 
 
-######*Note1: These steps differ from main [README.md](README.md) file, which is focused on building a differnt namespace to deploy app.*
+**Note1: These steps differ from main [README.md](README.md) file, which is focused on building a differnt namespace to deploy app.**
 -------
-######*Note2: We assume you have completed the steps in [AppMesh-Install-README.md](AppMesh-Install-README.md) before proceeding.*
+**Note2: We assume you have completed the steps in [AppMesh-Install-README.md](AppMesh-Install-README.md) before proceeding.**
 ------
 #
 **Step 1: Export the variables and start following after completeing 9 steps from [README.md](README.md) file.**

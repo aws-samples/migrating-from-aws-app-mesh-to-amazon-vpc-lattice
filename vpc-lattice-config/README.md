@@ -167,7 +167,7 @@ This folder contains sample HttpRoute and TargetGroupPolicy for the migration of
 **Step 16: ###Optional### -Only required, if you don't already have gateway-api-controller running. Login to get helm chat from ECR and install gateway controller.**
 
 ```bash
-    aws ecr-public get-login-password --region us-east-1 | helm registry login --username AWS --password-stdin public.ecr.aws
+    aws ecr-public get-login-password --region $AWS_REGION | helm registry login --username AWS --password-stdin public.ecr.aws
 
     # set lacttice controller version
     export LATTICE_CONTROLLER_VERSION=1.0.6

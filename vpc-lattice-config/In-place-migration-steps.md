@@ -222,7 +222,7 @@ Check in UI, click on service, select 'proddetail-httproute-prodcatalog-ns' clic
 ###### *Note: It will fail because of ### Known issue https://github.com/istio/istio/issues/2833 ### Envoy 404 when receiving request with unknown hostname*
 
 ```bash
-echo 'Let VPC Lattice service assign domain names to our httproutes'
+echo 'Waiting to let VPC Lattice service assign domain names to our httproutes'
 
 kubectl  wait httproute proddetail-httproute -n $oldns_name --for=jsonpath='{.metadata.annotations.application-networking\.k8s\.aws/lattice-assigned-domain-name}' --timeout=300s
 
@@ -235,7 +235,7 @@ export GET_CATALOG_POD_NAME=$(kubectl get pods -n $oldns_name -l app=prodcatalog
 alias exit_code_catalog_to_proddetail='kubectl -n $oldns_name exec -it $GET_CATALOG_POD_NAME -c prodcatalog -- curl -o /dev/null -s -w "%{http_code}\n" $GET_PRODDETAIL_URL:3000/catalogDetail'
 export CHECK_CONN_CATALOG_TO_PRODDETAIL=$(echo "kubectl -n $oldns_name exec -it ${GET_CATALOG_POD_NAME} -c prodcatalog -- curl ${GET_PRODDETAIL_URL}:3000/catalogDetail")
 export CHECK_CONN_CATALOG_TO_PRODDETAIL_jq=$(echo "kubectl -n $oldns_name exec -it ${GET_CATALOG_POD_NAME} -c prodcatalog -- curl ${GET_PRODDETAIL_URL}:3000/catalogDetail 2>&1|jq -s") 
-
+echo 'Waiting to let VPC Lattice service assign domain names to our httproutes'
 # Find URL for "prodcatalog" service created by httproute
 kubectl  wait httproute prodcatalog-httproute -n $oldns_name --for=jsonpath='{.metadata.annotations.application-networking\.k8s\.aws/lattice-assigned-domain-name}' --timeout=300s
 
@@ -429,7 +429,7 @@ oldns_cmd ./vpc-lattice-config/files/canary.yaml|envsubst|kubectl apply -f -
 
 **Step 33: Let's update "Static" image came from 'polyglot demo' application".**
 Let's rebuild our Frontend container to show updated architecture image with VPC Lattice
-
+*~ pardon ugly cat and mv, MacOS and linux sed compatibility limitations forced to do it~*
 ```bash
 export PROJECT_NAME=eks-app-mesh-to-vpc-lattice
 export APP_VERSION=1.0
@@ -437,12 +437,16 @@ app=frontend_node
 
 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
-cp vpc-lattice-config/images/polyglot-lattice-architecture.png eks-app-mesh-polyglot-demo/apps/frontend_node/public/architecture.png
+cp vpc-lattice-config/images/polyglot-lattice-architecture.png eks-app-mesh-polyglot-demo/apps/frontend_node/public/architecture2.png
+cat eks-app-mesh-polyglot-demo/apps/frontend_node/views/index.ejs|sed 's/architecture.png/architecture2.png/g' > eks-app-mesh-polyglot-demo/apps/frontend_node/views/index.ejs1
+mv eks-app-mesh-polyglot-demo/apps/frontend_node/views/index.ejs1 eks-app-mesh-polyglot-demo/apps/frontend_node/views/index.ejs
+
 cd eks-app-mesh-polyglot-demo
 TARGET=${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/$PROJECT_NAME/$app:$APP_VERSION
 docker buildx build --platform linux/amd64 -t $TARGET apps/$app
 docker push $TARGET
 cd ..
+
 kubectl -n $oldns_name rollout restart deployment frontend-node
 ```
 Try accessing the application using Ingress LB URL, it should show you 2 versions if you click on "Canary Deployment" button in UI.
@@ -468,11 +472,11 @@ kubectl -n $oldns_name delete deployment.apps/ingress-gw
 
 kubectl delete meshes prodcatalog-mesh --wait=0
 
-ProdEnvoyNamespaceIAMPolicArn=arn:aws:iam::$ACCOUNT_ID:policy/ProdEnvoyNamespaceIAMPolicy 
+ProdEnvoyNamespaceIAMPolicyArn=arn:aws:iam::$ACCOUNT_ID:policy/ProdEnvoyNamespaceIAMPolicy
 
 AWSAppMeshK8sControllerIAMPolicyArn=arn:aws:iam::$ACCOUNT_ID:policy/AWSAppMeshK8sControllerIAMPolicy
 
-aws iam list-entities-for-policy --policy-arn $ProdEnvoyNamespaceIAMPolicArn --query 'PolicyRoles[*].RoleName' --output text | xargs -n1 aws iam detach-role-policy --policy-arn $ProdEnvoyNamespaceIAMPolicArn --role-name
+aws iam list-entities-for-policy --policy-arn $ProdEnvoyNamespaceIAMPolicyArn --query 'PolicyRoles[*].RoleName' --output text | xargs -n1 aws iam detach-role-policy --policy-arn $ProdEnvoyNamespaceIAMPolicyArn --role-name
 
 aws iam list-entities-for-policy --policy-arn $AWSAppMeshK8sControllerIAMPolicyArn --query 'PolicyRoles[*].RoleName' --output text | xargs -n1 aws iam detach-role-policy --policy-arn $AWSAppMeshK8sControllerIAMPolicyArn --role-name
 

@@ -97,8 +97,16 @@ This command will create VPC, Subnets, EKS Cluster, Managed NodeGroup, Fargate P
 export AWS_REGION=us-west-2
 export CLUSTER_NAME=eksctlappmesh2lattice
 export ACCOUNT_ID=<YOUR_ACCOUNT_ID_HERE>
+```
+Once ACCOUNT_ID is set, run following command.
 
-cat vpc-lattice-config/files/clusterconfig.yaml |envsubst| eksctl create cluster -f -
+```bash
+if [[ ! -z $ACCOUNT_ID ]]; then
+  cat vpc-lattice-config/files/clusterconfig.yaml |envsubst| eksctl create cluster -f -
+else
+  echo -e "\nPlease set ACCOUNT_ID variable\n"
+fi
+
 ```
 
 **Confirm the Nodegroup in the EKS cluster**
@@ -276,6 +284,7 @@ FE_POD=$(kubectl -n  prodcatalog-ns get pod -l app=frontend-node -o jsonpath='{.
 
 kubectl exec $FE_POD -c frontend-node -n  prodcatalog-ns -it -- curl http://proddetail.prodcatalog-ns.svc.cluster.local:3000/catalogDetail
 
+echo -e "\n\nWaiting for Fargate pod 'prodcatalog' to become ready\n"
 kubectl wait -n prodcatalog-ns --for='jsonpath={.status.conditions[?(@.type=="Ready")].status}=True' -l app=prodcatalog pod --timeout=300s
 
 kubectl exec $FE_POD -c frontend-node -n  prodcatalog-ns -it -- curl http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/
@@ -326,7 +335,7 @@ kubectl get deployment,pods,svc -n prodcatalog-ns
 
 kubectl get pods -n prodcatalog-ns
 
-echo 'Wait for Fargate pod to get in "Ready" state'
+echo -e '\n\nWait for Fargate pod "prodcatalog" to get in "Ready" state\n'
 kubectl wait -n prodcatalog-ns --for='jsonpath={.status.conditions[?(@.type=="Ready")].status}=True' -l app=prodcatalog pod --timeout=300s
 
 ```
@@ -345,7 +354,9 @@ kubectl -n prodcatalog-ns get pods -o 'custom-columns=POD:.metadata.name,CONTAIN
 FE_POD=$(kubectl -n  prodcatalog-ns get pod -l app=frontend-node -o jsonpath='{.items[].metadata.name}')
 kubectl exec $FE_POD -c frontend-node -n  prodcatalog-ns -it -- curl -v http://prodcatalog.prodcatalog-ns.svc.cluster.local:5000/products/ 2>&1|grep -v Expire
 
->>>>>>>>
+```
+Output should look like following. Notice **"server: envoy"** in the output.
+```
 Defaulted container "frontend-node" out of: frontend-node, envoy, xray-daemon, proxyinit (init)
 *   Trying 10.100.169.180...
 * TCP_NODELAY set
@@ -386,8 +397,10 @@ kubectl get service/ingress-gw  -n prodcatalog-ns -o wide
 ```bash
 sleep 120
 curl -v $(kubectl get svc ingress-gw -n prodcatalog-ns -o jsonpath="{.status.loadBalancer.ingress[*].hostname}")
+```
+Output should look like following. Notice **"server: envoy"** in the output.
+```
 
->>>>>>>>
 * Host af8bd3870c116493082f92d406750a85-4ba02b9840969abf.elb.us-west-2.amazonaws.com:80 was resolved.
 * IPv6: (none)
 * IPv4: 44.231.89.103, 52.35.164.164, 35.84.119.111
@@ -412,7 +425,7 @@ curl -v $(kubectl get svc ingress-gw -n prodcatalog-ns -o jsonpath="{.status.loa
 
 **If you get message something similar as below, give it few min, Ingress Gateway/LB will take a few min to deploy**
 
-```bash
+```
 * Could not resolve host: af202a3281c2147c3a9d399f382973e7-8b13103ffbc2028b.elb.us-west-2.amazonaws.com
 * Closing connection
 curl: (6) Could not resolve host: af202a3281c2147c3a9d399f382973e7-8b13103ffbc2028b.elb.us-west-2.amazonaws.com

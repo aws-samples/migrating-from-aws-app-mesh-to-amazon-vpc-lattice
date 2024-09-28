@@ -487,12 +487,14 @@ aws iam delete-policy --policy-arn $AWSAppMeshK8sControllerIAMPolicyArn
 eksctl delete iamserviceaccount --cluster ${CLUSTER_NAME}  --name appmesh-controller
 ```
 -------
-**Step 35: Cleanup for EKS infrastructure**
-Once you have a solid understanding of the process and are satisfied with your testing on the EKS cluster created as part of the [AppMesh-Install-README.md](AppMesh-Install-README.md) steps, be sure to delete the resources to avoid future charges. You can do this by following the cleanup section of the EKS Blueprints pattern or by executing the following comamnd:
+**Step 35: Cleanup for EKS infrastructure.**
+Once you have a solid understanding of the process and are satisfied with your testing on the EKS cluster created as part of the [AppMesh-Install-README.md](AppMesh-Install-README.md) steps, be sure to delete the resources to avoid future charges. You can do this by executing the following comamnd:
 
 ```bash
 bash vpc-lattice-config/files/latticeblogcleanup.sh
 ```
+
+Please visit VPC Lattice console and cleanup anyting leftover e.g. any leftover "Target Groups" and "Service Networks".
 
 ### Conclusion:
 + By following the steps outlined in this guide, you can seamlessly transition your microservices architecture while maintaining service reliability and improving operational efficiency. 

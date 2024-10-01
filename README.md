@@ -9,10 +9,10 @@ This document is designed to give you an overview of the migration process. You 
 * To follow along, set up the application as mentioned in [AppMesh-Install-README.md](vpc-lattice-config/AppMesh-Install-README.md) before proceeding with the migration steps.
 
 
-The application referenced in the [blog](link_to_be_added_here) is located in [eks-app-mesh-polyglot-demo](https://github.com/aws-containers/eks-app-mesh-polyglot-demo) repository. All the necessary configuration files and steps for the migration to Amazon VPC Lattice are provided in [vpc-lattice-config](vpc-lattice-config) directory.
+The application referenced in the [blog](https://aws.amazon.com/blogs/containers/migrating-from-aws-app-mesh-to-amazon-vpc-lattice/) is located in [eks-app-mesh-polyglot-demo](https://github.com/aws-containers/eks-app-mesh-polyglot-demo) repository. All the necessary configuration files and steps for the migration to Amazon VPC Lattice are provided in [vpc-lattice-config](vpc-lattice-config) directory.
 
 ### Migration Approach
-We have outlined steps for 2 possible approaches but are using 1st approach (In-Place migration) as mentioned [blog](link_to_be_added_here).
+We have outlined steps for 2 possible approaches but are using 1st approach (In-Place migration) as mentioned [blog](https://aws.amazon.com/blogs/containers/migrating-from-aws-app-mesh-to-amazon-vpc-lattice/).
 ###### *Note: Scripts and commands outlined in both apparoaches assume that you have already completed steps mentioned in [AppMesh-Install-README.md](vpc-lattice-config/AppMesh-Install-README.md)*
 + [1. In-Place migration](vpc-lattice-config/In-place-migration-steps.md)
 

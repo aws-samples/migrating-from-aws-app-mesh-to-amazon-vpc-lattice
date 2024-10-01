@@ -328,4 +328,4 @@ bash vpc-lattice-config/files/latticeblogcleanup.sh
 + Migrating from AWS App Mesh to Amazon VPC Lattice provides a robust solution for managing application networking at scale, offering enhanced connectivity, load balancing, and security features. 
 + Be sure to explore the repository for more advanced use cases mentioned in [README.md](../README.md)
 + Remember to clean up any resources once you're done testing to avoid unnecessary charges.
-+ Please refer back to the blog using [this](link_to_be_added_here) link.
++ Please refer back to the blog using [this](https://aws.amazon.com/blogs/containers/migrating-from-aws-app-mesh-to-amazon-vpc-lattice/) link.

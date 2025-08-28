@@ -7,7 +7,7 @@ This guide provides instructions to launch Frontend UI service
 - Existing Public ALB with HTTPS listener in us-west-2 region
 - Two Target groups (`blue` and `green`) with 'ip' target type, protocol HTTP, and port 3000
 - ALB Listener rule with `blue` target group receiving 100% of the requests and `green` target group receiving 0% of the requests
-- Ensure ALB security group can send traffic to ECS tasks
+- Ensure ALB security group can send traffic to ECS tasks and receive HTTPs traffic from ECS tasks 
 
 ## Step 1: Register Task Definition
 
@@ -61,7 +61,45 @@ aws iam put-role-policy \
   }'
 ```
 
-## Step 4: Create ECS Service
+## Step 4: Create an IAM role to allow ECS service to update the ALB listener rule target group weights for blue green deployment.
+
+- Create trust policy for ECS service
+
+```bash
+cat > alb-trust-policy.json << EOF
+{
+  "Version": "2012-10-17", 
+  "Statement": [ 
+    {
+      "Sid": "AllowAccessToECSForInfrastructureManagement", 
+      "Effect": "Allow", 
+      "Principal": {
+        "Service": "ecs.amazonaws.com" 
+      }, 
+      "Action": "sts:AssumeRole" 
+    } 
+  ] 
+}
+EOF
+```
+
+- Create the IAM role
+
+```bash
+aws iam create-role \
+      --role-name ecsInfrastructureRoleForLoadBalancers \
+      --assume-role-policy-document file://alb-trust-policy.json
+```
+
+- Attach the ECS Infra policy for Load Balancers
+
+```bash
+aws iam attach-role-policy \
+      --role-name ecsInfrastructureRoleForLoadBalancers \
+      --policy-arn arn:aws:iam::aws:policy/AmazonECSInfrastructureRolePolicyForLoadBalancers
+```
+
+## Step 5: Create ECS Service
 
 - Update `frontend-service.json` and replace the placeholders for CLUSTER_NAME, TARGET_GROUP_ARN, SUBNET1/2/3 (keep as many private subnets needed), and SECURITY_GROUP
 - Ensure the Security Group can receive traffic at least from ALB security group on port 3000
@@ -73,7 +111,7 @@ aws ecs create-service \
   --region us-west-2
 ```
 
-## Step 5: Verify the ECS Service
+## Step 6: Verify the ECS Service
 
 1. Check that the new task is running:
 

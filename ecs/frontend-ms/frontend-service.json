@@ -1,13 +1,18 @@
 {
     "cluster": "CLUSTER_NAME",
     "serviceName": "frontend-ui",
-    "taskDefinition": "frontend-ui",
+    "taskDefinition": "frontend-ui:REVISION",
     "availabilityZoneRebalancing": "ENABLED",
     "loadBalancers": [
         {
-            "targetGroupArn": "TARGET_GROUP_ARN",
+            "targetGroupArn": "BLUE_TARGET_GROUP_ARN",
             "containerName": "frontend-ui",
-            "containerPort": 3000
+            "containerPort": 3000,
+            "advancedConfiguration": {
+                "alternateTargetGroupArn": "GREEN_TARGET_GROUP_ARN",
+                "productionListenerRule": "LISTENER_RULE_ARN",
+                "roleArn": "ALB_ROLE_ARN"
+            }
         }
     ],
     "serviceRegistries": [],
@@ -19,6 +24,8 @@
             "enable": false,
             "rollback": false
         },
+        "strategy": "BLUE_GREEN",
+        "bakeTimeInMinutes": NUMBER,
         "maximumPercent": 200,
         "minimumHealthyPercent": 100
     },

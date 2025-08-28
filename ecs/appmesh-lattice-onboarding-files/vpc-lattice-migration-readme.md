@@ -270,60 +270,20 @@ To configure HTTPS for your VPC Lattice service:
    curl -v http://<vpc-lattice-service-domain>/api/products
    ```
 
-## Step 13: Create an IAM role to allow ECS service to update the ALB listener rule target group weights for blue green deployment.
-
-- Create trust policy for ECS service
-
-```bash
-cat > alb-trust-policy.json << EOF
-{
-  "Version": "2012-10-17", 
-  "Statement": [ 
-    {
-      "Sid": "AllowAccessToECSForInfrastructureManagement", 
-      "Effect": "Allow", 
-      "Principal": {
-        "Service": "ecs.amazonaws.com" 
-      }, 
-      "Action": "sts:AssumeRole" 
-    } 
-  ] 
-}
-EOF
-```
-
-- Create the IAM role
-
-```bash
-aws iam create-role \
-      --role-name ecsInfrastructureRoleForLoadBalancers \
-      --assume-role-policy-document file://alb-trust-policy.json
-```
-
-- Attach the ECS Infra policy for Load Balancers
-
-```bash
-aws iam attach-role-policy \
-      --role-name ecsInfrastructureRoleForLoadBalancers \
-      --policy-arn arn:aws:iam::aws:policy/AmazonECSInfrastructureRolePolicyForLoadBalancers
-```
-
-## Step 14: Update Frontend application configuration to connect to product-ms service through VPC Lattice, instead of App Mesh.
+## Step 13: Update Frontend application configuration to connect to product-ms service through VPC Lattice, instead of App Mesh.
 
 - Update your frontend-ui task definition and replace the value of environment variable PRODUCTS_DOMAIN with VPC Lattice service domain instead of the App Mesh service domain.
-- Update frontend-ui ECS service to use the latest task definition using below command and replace all the values enclosed in <>, including the ALB_ROLE created in previous step:
+- Update frontend-ui ECS service to use the latest task definition using below command and replace all the values enclosed in <>:
 
 ```bash
 aws ecs update-service \
 --cluster <CLUSTER> \
 --service frontend-ui \
 --task-definition frontend-ui:<REVISION> \
---deployment-configuration "strategy=BLUE_GREEN,bakeTimeInMinutes=<NUMBER>" \
---load-balancers "targetGroupArn=<BLUE_TG_ARN>,containerName=frontend-ui,containerPort=3000,advancedConfiguration={alternateTargetGroupArn=<GREEN_TG_ARN>,productionListenerRule=<LISTENER_RULE_ARN>,roleArn=<ALB_ROLE_ARN>}" \
 --region us-west-2
 ```
 
-## Step 15: Verify the Migration
+## Step 14: Verify the Migration
 
 1. Test connectivity to your service through VPC Lattice:
    ```bash

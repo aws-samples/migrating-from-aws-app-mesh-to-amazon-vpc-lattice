@@ -3,7 +3,9 @@
 
 ## Getting started
 
-This document is designed to give you an overview of the migration process. You can use this example as a reference to adapt the steps for your own microservices applications migration.
+This document is designed to give you an overview of the migration process. For ECS, please go to [ECS readme doc](ecs/README.md). For EKS, continue on.
+
+You can use this example as a reference to adapt the steps for your own microservices applications migration.
 
 ### Step 1: Setup sample application on a new cluster
 * To follow along, set up the application as mentioned in [AppMesh-Install-README.md](vpc-lattice-config/AppMesh-Install-README.md) before proceeding with the migration steps.

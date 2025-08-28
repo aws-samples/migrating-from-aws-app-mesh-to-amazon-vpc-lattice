@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "start": "DATABASE_URL=postgresql://postgres:Pass2020!@localhost:5432/inventorydb node index.js",
+    "startdb": "docker run --rm -d --name dev-postgres -e POSTGRES_PASSWORD=Pass2020! -e PGDATA=/tmp/pgdata -v ${HOME}/postgres-data/:/var/lib/postgresql/data -p 5432:5432 postgres"
+
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0",
+    "path": "^0.12.7",
+    "pg": "^8.13.1"
+  }
+}

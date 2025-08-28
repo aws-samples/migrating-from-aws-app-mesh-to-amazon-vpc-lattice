@@ -1,0 +1,57 @@
+{
+    "cluster": "CLUSTER_NAME",
+    "serviceName": "frontend-ui",
+    "taskDefinition": "frontend-ui",
+    "availabilityZoneRebalancing": "ENABLED",
+    "loadBalancers": [
+        {
+            "targetGroupArn": "TARGET_GROUP_ARN",
+            "containerName": "frontend-ui",
+            "containerPort": 3000
+        }
+    ],
+    "serviceRegistries": [],
+    "desiredCount": 1,
+    "launchType": "EC2",
+    "capacityProviderStrategy": [],
+    "deploymentConfiguration": {
+        "deploymentCircuitBreaker": {
+            "enable": false,
+            "rollback": false
+        },
+        "maximumPercent": 200,
+        "minimumHealthyPercent": 100
+    },
+    "placementConstraints": [],
+    "placementStrategy": [
+        {
+            "type": "spread",
+            "field": "attribute:ecs.availability-zone"
+        },
+        {
+            "type": "spread",
+            "field": "instanceId"
+        }
+    ],
+    "networkConfiguration": {
+        "awsvpcConfiguration": {
+            "subnets": [
+                "SUBNET1",
+                "SUBNET2",
+                "SUBNET3"
+            ],
+            "securityGroups": [
+                "SECURITY_GROUP"
+            ],
+            "assignPublicIp": "DISABLED"
+        }
+    },
+    "healthCheckGracePeriodSeconds": 0,
+    "schedulingStrategy": "REPLICA",
+    "deploymentController": {
+        "type": "ECS"
+    },
+    "enableECSManagedTags": true,
+    "propagateTags": "NONE",
+    "enableExecuteCommand": false
+}

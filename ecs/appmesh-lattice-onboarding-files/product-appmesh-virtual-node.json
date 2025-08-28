@@ -1,0 +1,22 @@
+{
+  "listeners": [
+    {
+      "portMapping": {
+        "port": 5000,
+        "protocol": "http"
+      }
+    }
+  ],
+  "serviceDiscovery": {
+    "awsCloudMap": {
+      "namespaceName": "inventory-mesh.local",
+      "serviceName": "product-ms",
+      "attributes": [
+        {
+          "key": "ECS_TASK_DEFINITION_FAMILY",
+          "value": "product-micro-service"
+        }
+      ]
+    }
+  }
+}

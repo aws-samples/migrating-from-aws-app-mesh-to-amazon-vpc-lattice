@@ -1,0 +1,64 @@
+{
+    "cluster": "CLUSTER_NAME",
+    "serviceName": "frontend-ui",
+    "taskDefinition": "frontend-ui:FRONTEND_TASKDEF_REVISION",
+    "availabilityZoneRebalancing": "ENABLED",
+    "loadBalancers": [
+        {
+            "targetGroupArn": "BLUE_TARGET_GROUP_ARN",
+            "containerName": "frontend-ui",
+            "containerPort": 3000,
+            "advancedConfiguration": {
+                "alternateTargetGroupArn": "GREEN_TARGET_GROUP_ARN",
+                "productionListenerRule": "LISTENER_RULE_ARN",
+                "roleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsInfrastructureRoleForLoadBalancers"
+            }
+        }
+    ],
+    "serviceRegistries": [],
+    "desiredCount": 1,
+    "launchType": "EC2",
+    "capacityProviderStrategy": [],
+    "deploymentConfiguration": {
+        "deploymentCircuitBreaker": {
+            "enable": false,
+            "rollback": false
+        },
+        "strategy": "BLUE_GREEN",
+        "bakeTimeInMinutes": 0,
+        "maximumPercent": 200,
+        "minimumHealthyPercent": 100
+    },
+    "placementConstraints": [],
+    "placementStrategy": [
+        {
+            "type": "spread",
+            "field": "attribute:ecs.availability-zone"
+        },
+        {
+            "type": "spread",
+            "field": "instanceId"
+        }
+    ],
+    "networkConfiguration": {
+        "awsvpcConfiguration": {
+            "subnets": [
+                "SUBNET1",
+                "SUBNET2",
+                "SUBNET3"
+            ],
+            "securityGroups": [
+                "SECURITY_GROUP_ID"
+            ],
+            "assignPublicIp": "DISABLED"
+        }
+    },
+    "healthCheckGracePeriodSeconds": 0,
+    "schedulingStrategy": "REPLICA",
+    "deploymentController": {
+        "type": "ECS"
+    },
+    "enableECSManagedTags": true,
+    "propagateTags": "NONE",
+    "enableExecuteCommand": false
+}

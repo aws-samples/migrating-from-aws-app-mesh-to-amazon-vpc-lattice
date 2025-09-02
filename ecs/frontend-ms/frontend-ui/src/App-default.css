@@ -1,0 +1,274 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f8ff; /* Light blue background */
+  color: #333;
+}
+
+.App {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #3498db; /* Blue panel color */
+  color: black;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-left h1 {
+  margin: 0;
+  font-size: 24px;
+  margin-right: 20px;
+}
+
+.navbar-left ul {
+  display: flex;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.navbar-left ul li {
+  margin-right: 20px;
+}
+
+.navbar-left ul li a {
+  color:black;
+  text-decoration: none;
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+
+.navbar-right button.architecture-button {
+  background-color: ffd166;
+  color: black;
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+
+.hero {
+  background-color: #66c2a5; /* Teal */
+  color: white;
+  padding: 40px;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.user-section, .product-section, .order-section {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.user-section button {
+  margin-left: 10px;
+  padding: 5px 10px;
+  background-color: #ffd166;
+  color: black;  /* This ensures all buttons have black text */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.user-section button:hover {
+  background-color: #e0e0e0;
+}
+
+.user-section button:last-child {
+  background-color: #ffd166;
+  color: black;  /* This specifically ensures the "Done" button has black text */
+}
+
+input[type="text"], input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+button {
+  background-color: #ffd166; 
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  background-color: #ffd166; /* Yellow */
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 4px;
+}
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #4a90e2;
+}
+
+.order-response {
+  background-color: #8fd9a8; /* Light green */
+  color: #2c7a7b;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+.product-list-window {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white(203, 207, 214);
+  overflow-y: auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.back-button {
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  background-color: #4a9347;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.order-section button {
+  margin-left: 10px;
+  padding: 5px 10px;
+  background-color: #f0f0f0;
+  color: black;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.order-section button:hover {
+  background-color: #e0e0e0;
+}
+
+.order-response {
+  margin-top: 20px;
+}
+
+.order-response button {
+  background-color: #ffd166;
+  color: black;
+}
+
+.error {
+  color: #f44336;
+  margin-top: 10px;
+}
+
+.back-button:hover {
+  background-color: #787493;
+}
+
+.architecture-view {
+  padding: 20px;
+  text-align: center;
+}
+
+.back-button {
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.architecture-diagram {
+  margin-top: 20px;
+}
+
+.architecture-diagram img {
+  max-width: 100%;
+  height: auto;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.order-section {
+  margin-bottom: 20px;
+}
+
+.order-section h3 {
+  margin-bottom: 10px;
+}
+
+.order-section input {
+  margin-right: 10px;
+  margin-bottom: 10px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.order-section button {
+  margin-left: 10px;
+  padding: 5px 10px;
+  background-color: #ffd166; 
+  color: black;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.order-section button:hover {
+  background-color: #ffd166; 
+}
+
+.order-info button {
+  margin-top: 10px;
+  background-color: #ffd166; /* Keep the "Done" button yellow */
+  color: black;
+}
+
+.order-info button:hover {
+  background-color: #ffc233;
+}
+
+.error {
+  color: #f44336;
+  margin-top: 10px;
+}
+
+
+

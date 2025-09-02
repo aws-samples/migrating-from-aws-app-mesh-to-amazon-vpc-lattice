@@ -1,0 +1,80 @@
+{
+    "containerDefinitions": [
+        {
+            "name": "frontend-ui",
+            "image": "ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/frontend-ui:latest",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "containerPort": 3000,
+                    "hostPort": 3000,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "PRODUCTS_DOMAIN",
+                    "value": "product-ms.inventory-mesh.local:5000"
+                },
+                {
+                    "name": "ORDERS_DOMAIN",
+                    "value": "product-ms.inventory-mesh.local:5000"
+                },
+                {
+                    "name": "USERS_DOMAIN",
+                    "value": "product-ms.inventory-mesh.local:5000"
+                }
+            ],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/frontend-ui",
+                    "awslogs-region": "us-west-2",
+                    "awslogs-stream-prefix": "frontend-ui"
+                }
+            },
+            "systemControls": []
+        },
+        {
+            "name": "xray-daemon",
+            "image": "amazon/aws-xray-daemon",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "containerPort": 2000,
+                    "hostPort": 2000,
+                    "protocol": "udp"
+                }
+            ],
+            "essential": true,
+            "environment": [],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "user": "1337",
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/frontend-ui-xray",
+                    "awslogs-region": "us-west-2",
+                    "awslogs-stream-prefix": "xray"
+                }
+            },
+            "systemControls": []
+        }
+    ],
+    "family": "frontend-ui",
+    "taskRoleArn": "ECS_TASK_ROLE",
+    "executionRoleArn": "ECS_TASK_EXECUTION_ROLE",
+    "networkMode": "awsvpc",
+    "volumes": [],
+    "placementConstraints": [],
+    "requiresCompatibilities": [
+        "EC2"
+    ],
+    "cpu": "256",
+    "memory": "512",
+    "enableFaultInjection": false
+}

@@ -1,0 +1,16 @@
+{
+  "Name": "product-ms",
+  "NamespaceId": "CLOUDMAP_NAMESPACE_ID",
+  "DnsConfig": {
+    "DnsRecords": [
+      {
+        "Type": "A",
+        "TTL": 300
+      }
+    ],
+    "RoutingPolicy": "MULTIVALUE"
+  },
+  "HealthCheckCustomConfig": {
+    "FailureThreshold": 1
+  }
+}

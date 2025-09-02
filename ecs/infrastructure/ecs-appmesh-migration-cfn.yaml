@@ -1,0 +1,1243 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for deploying ECS and App Mesh Resources for VPC Lattice Migration Blog. WARNING: Not intended for production deployment.'
+Resources:
+  #============================================================
+  # VPC and Networking
+  #============================================================
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-VPC'
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-IGW'
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  # Public Subnets
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-PublicSubnet1'
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-PublicSubnet2'
+
+  PublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [2, !GetAZs '']
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-PublicSubnet3'
+
+  # Private Subnets
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.0.4.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-PrivateSubnet1'
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: 10.0.5.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-PrivateSubnet2'
+
+  PrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [2, !GetAZs '']
+      CidrBlock: 10.0.6.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-PrivateSubnet3'
+
+  # NAT Gateway and Elastic IPs
+  NatGatewayEIP1:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEIP1.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-NatGateway1'
+
+  # Route Tables
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-PublicRouteTable'
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  PublicSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet3
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-PrivateRouteTable1'
+
+  DefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet2
+
+  PrivateSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet3
+
+  #============================================================
+  # Security Groups
+  #============================================================
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for the ALB
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ECS tasks
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 10.0.0.0/16
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Aurora PostgreSQL
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 10.0.0.0/16
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  #============================================================
+  # ECR Repositories
+  #============================================================
+  ProductRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: product-ms
+      EmptyOnDelete: true
+
+  OrderRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: order-ms
+      EmptyOnDelete: true
+
+  UserRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: user-ms
+      EmptyOnDelete: true
+
+  FrontendRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: frontend-ui
+      EmptyOnDelete: true
+
+  #============================================================
+  # Aurora PostgreSQL Serverless
+  #============================================================
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for Aurora PostgreSQL
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+
+  DBSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${AWS::StackName}/database/credentials'
+      Description: Aurora PostgreSQL credentials
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "appmesh"}'
+        GenerateStringKey: "password"
+        PasswordLength: 16
+        ExcludeCharacters: '":@/\'
+
+  AuroraCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Engine: aurora-postgresql
+      EngineVersion: 14.6
+      DatabaseName: inventorydb
+      Port: 5432
+      MasterUsername: !Sub '{{resolve:secretsmanager:${DBSecret}:SecretString:username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DBSecret}:SecretString:password}}'
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VpcSecurityGroupIds:
+        - !GetAtt DatabaseSecurityGroup.GroupId
+      BackupRetentionPeriod: 7
+      DeletionProtection: false
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: 0.5
+        MaxCapacity: 4
+
+  AuroraInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora-postgresql
+      DBClusterIdentifier: !Ref AuroraCluster
+      DBInstanceClass: db.serverless
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: false
+
+  # DatabaseURLParameter:
+  #   Type: AWS::SSM::Parameter
+  #   Properties:
+  #     Name: !Sub '/${AWS::StackName}/database/url'
+  #     Type: String ### Secure string not supported by CFN
+  #     Value: !Sub 'postgresql://{{resolve:secretsmanager:${DBSecret}:SecretString:username}}:{{resolve:secretsmanager:${DBSecret}:SecretString:password}}@${AuroraCluster.Endpoint.Address}:${AuroraCluster.Endpoint.Port}/inventorydb'
+  #     Description: Aurora PostgreSQL connection URL
+
+  DatabaseURLSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${AWS::StackName}Databaseurl'
+      SecretString: !Sub postgresql://{{resolve:secretsmanager:${DBSecret}:SecretString:username}}:{{resolve:secretsmanager:${DBSecret}:SecretString:password}}@${AuroraCluster.Endpoint.Address}:${AuroraCluster.Endpoint.Port}/inventorydb
+      Description: Aurora PostgreSQL connection URL
+
+  #============================================================
+  # IAM Roles
+  #============================================================
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+      Policies:
+        - PolicyName: AmazonECSTaskSecretsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - ssm:GetParameters
+                  - ssm:GetParameter
+                Resource: "*"
+
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchFullAccessV2
+      Policies:
+        - PolicyName: AppMeshStreamPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: appmesh:StreamAggregatedResources
+                Resource: "*"
+        - PolicyName: XrayPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                  - xray:GetSamplingRules
+                  - xray:GetSamplingTargets
+                  - xray:GetSamplingStatisticSummaries
+                Resource: "*"
+
+  ECSInfrastructureRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonECSInfrastructureRolePolicyForVpcLattice
+
+  #============================================================
+  # Log Groups
+  #============================================================
+  ProductLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/product-ms
+      RetentionInDays: 14
+
+  ProductEnvoyLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/product-ms-envoy
+      RetentionInDays: 14
+
+  ProductXrayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/product-ms-xray
+      RetentionInDays: 14
+
+  OrderLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/order-ms
+      RetentionInDays: 14
+
+  OrderEnvoyLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/order-ms-envoy
+      RetentionInDays: 14
+
+  OrderXrayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/order-ms-xray
+      RetentionInDays: 14
+
+  UserLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/user-ms
+      RetentionInDays: 14
+
+  UserEnvoyLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/user-ms-envoy
+      RetentionInDays: 14
+
+  UserXrayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/user-ms-xray
+      RetentionInDays: 14
+
+  FrontendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/frontend-ui
+      RetentionInDays: 14
+
+  FrontendXrayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/frontend-ui-xray
+      RetentionInDays: 14
+  #============================================================
+  # App Mesh Resources
+  #============================================================
+  InventoryMesh:
+    Type: AWS::AppMesh::Mesh
+    Properties:
+      MeshName: inventory-mesh
+      Spec:
+        EgressFilter:
+          Type: ALLOW_ALL
+
+  #============================================================
+  # Service Discovery
+  #============================================================
+  CloudMapNamespace:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: inventory-mesh.local
+      Vpc: !Ref VPC
+
+  ProductServiceDiscovery:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: product-ms
+      DnsConfig:
+        DnsRecords:
+          - Type: A
+            TTL: 300
+        RoutingPolicy: MULTIVALUE
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      NamespaceId: !Ref CloudMapNamespace
+
+  OrderServiceDiscovery:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: order-ms
+      DnsConfig:
+        DnsRecords:
+          - Type: A
+            TTL: 300
+        RoutingPolicy: MULTIVALUE
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      NamespaceId: !Ref CloudMapNamespace
+
+  UserServiceDiscovery:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: user-ms
+      DnsConfig:
+        DnsRecords:
+          - Type: A
+            TTL: 300
+        RoutingPolicy: MULTIVALUE
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      NamespaceId: !Ref CloudMapNamespace
+
+  #============================================================
+  # App Mesh Virtual Nodes and Services
+  #============================================================
+  ProductVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt InventoryMesh.MeshName
+      VirtualNodeName: product-ms-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 5000
+              Protocol: http
+        ServiceDiscovery:
+          AWSCloudMap:
+            ServiceName: product-ms
+            NamespaceName: inventory-mesh.local
+            Attributes:
+              - Key: "ECS_TASK_DEFINITION_FAMILY"
+                Value: "product-micro-service"
+
+  ProductVirtualService:
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt InventoryMesh.MeshName
+      VirtualServiceName: product-ms.inventory-mesh.local
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: product-ms-vn
+    DependsOn: OrderVirtualNode
+
+  OrderVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt InventoryMesh.MeshName
+      VirtualNodeName: order-ms-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 7000
+              Protocol: http
+        ServiceDiscovery:
+          AWSCloudMap:
+            ServiceName: order-ms
+            NamespaceName: inventory-mesh.local
+            Attributes:
+              - Key: "ECS_TASK_DEFINITION_FAMILY"
+                Value: "order-micro-service"
+
+  OrderVirtualService:
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt InventoryMesh.MeshName
+      VirtualServiceName: order-ms.inventory-mesh.local
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: order-ms-vn
+    DependsOn: OrderVirtualNode
+
+  UserVirtualNode:
+    Type: AWS::AppMesh::VirtualNode
+    Properties:
+      MeshName: !GetAtt InventoryMesh.MeshName
+      VirtualNodeName: user-ms-vn
+      Spec:
+        Listeners:
+          - PortMapping:
+              Port: 4000
+              Protocol: http
+        ServiceDiscovery:
+          AWSCloudMap:
+            ServiceName: user-ms
+            NamespaceName: inventory-mesh.local
+            Attributes:
+              - Key: "ECS_TASK_DEFINITION_FAMILY"
+                Value: "user-micro-service"
+
+  UserVirtualService:
+    Type: AWS::AppMesh::VirtualService
+    Properties:
+      MeshName: !GetAtt InventoryMesh.MeshName
+      VirtualServiceName: user-ms.inventory-mesh.local
+      Spec:
+        Provider:
+          VirtualNode:
+            VirtualNodeName: user-ms-vn
+    DependsOn: UserVirtualNode
+
+  #============================================================
+  # ECS Cluster
+  #============================================================
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub '${AWS::StackName}-cluster'
+      ClusterSettings:
+        - Name: containerInsights
+          Value: disabled
+  ECSAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn:
+      - ECSCluster
+      - EC2Role
+    Properties:
+      VPCZoneIdentifier:
+        - Ref: PrivateSubnet1
+        - Ref: PrivateSubnet2
+        - Ref: PrivateSubnet3
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ContainerInstances
+        Version: !GetAtt ContainerInstances.LatestVersionNumber
+      MinSize: 0
+      MaxSize: 2
+      DesiredCapacity: 1
+      NewInstancesProtectedFromScaleIn: false
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: "true"
+  # The config for each instance that is added to the cluster
+  ContainerInstances:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: "asg-launch-template"
+      LaunchTemplateData:
+        ImageId: "{{resolve:ssm:/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended/image_id}}"
+        InstanceType: "m5.4xlarge"
+        IamInstanceProfile:
+          Name: !Ref EC2InstanceProfile
+        SecurityGroupIds:
+          - !Ref ContainerHostSecurityGroup
+        # This injected configuration file is how the EC2 instance
+      # knows which ECS cluster on your AWS account it should be joining
+        UserData:
+          Fn::Base64: !Sub |
+           #!/bin/bash -xe
+            echo ECS_CLUSTER=${ECSCluster} >> /etc/ecs/ecs.config
+            yum install -y aws-cfn-bootstrap
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource ContainerInstances --configsets full_install --region ${AWS::Region} &
+         # Disable IMDSv1, and require IMDSv2
+        MetadataOptions:
+          HttpEndpoint: enabled
+          HttpTokens: required
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles: 
+      - !Ref EC2Role
+  CapacityProvider:
+    Type: AWS::ECS::CapacityProvider
+    Properties:
+      AutoScalingGroupProvider:
+        AutoScalingGroupArn: !Ref ECSAutoScalingGroup
+        ManagedScaling:
+          InstanceWarmupPeriod: 60
+          MinimumScalingStepSize: 1
+          MaximumScalingStepSize: 100
+          Status: ENABLED
+          TargetCapacity: 100
+        ManagedTerminationProtection: DISABLED
+  CapacityProviderAssociation:
+    Type: AWS::ECS::ClusterCapacityProviderAssociations
+    Properties:
+      CapacityProviders:
+        - !Ref CapacityProvider
+      Cluster: !Ref ECSCluster
+      DefaultCapacityProviderStrategy:
+        - Base: 0
+          CapacityProvider: !Ref CapacityProvider
+          Weight: 1
+  ContainerHostSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to the EC2 hosts that run containers
+      VpcId:
+        Ref: VPC
+  # Role for the EC2 hosts. This allows the ECS agent on the EC2 hosts
+  # to communciate with the ECS control plane, as well as download the docker
+  # images from ECR to run on your host.
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+      # See reference: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/security-iam-awsmanpol.html#security-iam-awsmanpol-AmazonEC2ContainerServiceforEC2Role
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+      # This managed policy allows us to connect to the instance using SSM
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+    
+  #============================================================
+  # Product Service Task Definition and Service
+  #============================================================
+  ProductTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: 
+      - ProductVirtualNode
+    Properties:
+      Family: product-micro-service
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt ECSTaskRole.Arn
+      ContainerDefinitions:
+        - Name: product-micro-service
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ProductRepository}:latest'
+          Essential: true
+          PortMappings:
+            - ContainerPort: 5000
+              HostPort: 5000
+              Protocol: tcp
+              Name: "product-ms-tcp-5000"
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: PORT
+              Value: '5000'
+            - Name: APPMESH_VIRTUAL_NODE_NAME
+              Value: !Sub 'mesh/${InventoryMesh.MeshName}/virtualNode/product-ms-vn'
+          Secrets:
+            - Name: DATABASE_URL
+              ValueFrom: !Ref DatabaseURLSecret
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ProductLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: product-ms
+          DependsOn:
+            - ContainerName: envoy
+              Condition: HEALTHY
+        - Name: envoy
+          Image: !Sub '840364872350.dkr.ecr.${AWS::Region}.amazonaws.com/aws-appmesh-envoy:v1.25.4.0-prod'
+          Essential: true
+          Environment:
+            - Name: APPMESH_VIRTUAL_NODE_NAME
+              Value: !Sub 'mesh/${InventoryMesh.MeshName}/virtualNode/product-ms-vn'
+            - Name: ENABLE_ENVOY_XRAY_TRACING
+              Value: '1'
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -s http://localhost:9901/server_info | grep state | grep -q LIVE
+            StartPeriod: 10
+            Interval: 5
+            Timeout: 2
+            Retries: 3
+          User: '1337'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ProductEnvoyLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: envoy
+        - Name: xray-daemon
+          Image: amazon/aws-xray-daemon
+          Essential: true
+          User: '1337'
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: udp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ProductXrayLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: xray
+      RequiresCompatibilities:
+        - EC2
+      Cpu: '512'
+      Memory: '1024'
+      ProxyConfiguration:
+        Type: APPMESH
+        ContainerName: envoy
+        ProxyConfigurationProperties:
+          - Name: IgnoredUID
+            Value: '1337'
+          - Name: ProxyIngressPort
+            Value: '15000'
+          - Name: ProxyEgressPort
+            Value: '15001'
+          - Name: AppPorts
+            Value: '5000'
+          - Name: EgressIgnoredIPs
+            Value: 169.254.170.2,169.254.169.254
+
+  ProductService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: product-service
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref ProductTaskDefinition
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      AvailabilityZoneRebalancing: ENABLED
+      PlacementStrategies:
+        - Type: spread
+          Field: attribute:ecs.availability-zone
+        - Type: spread
+          Field: instanceId
+      LaunchType: EC2
+      SchedulingStrategy: REPLICA
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref ECSSecurityGroup
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+            - !Ref PrivateSubnet3
+      ServiceRegistries:
+        - RegistryArn: !GetAtt ProductServiceDiscovery.Arn
+
+  #============================================================
+  # Order Service Task Definition and Service
+  #============================================================
+  OrderTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: OrderVirtualNode
+    Properties:
+      Family: order-micro-service
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt ECSTaskRole.Arn
+      ContainerDefinitions:
+        - Name: order-micro-service
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${OrderRepository}:latest'
+          Essential: true
+          PortMappings:
+            - ContainerPort: 7000
+              Protocol: tcp
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: PORT
+              Value: '7000'
+            - Name: APPMESH_VIRTUAL_NODE_NAME
+              Value: !Sub 'mesh/${InventoryMesh.MeshName}/virtualNode/order-ms-vn'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref OrderLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: order-ms
+          DependsOn:
+            - ContainerName: envoy
+              Condition: HEALTHY
+        - Name: envoy
+          Image: !Sub '840364872350.dkr.ecr.${AWS::Region}.amazonaws.com/aws-appmesh-envoy:v1.25.4.0-prod'
+          Essential: true
+          Environment:
+            - Name: APPMESH_VIRTUAL_NODE_NAME
+              Value: !Sub 'mesh/${InventoryMesh.MeshName}/virtualNode/order-ms-vn'
+            - Name: ENABLE_ENVOY_XRAY_TRACING
+              Value: '1'
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -s http://localhost:9901/server_info | grep state | grep -q LIVE
+            StartPeriod: 10
+            Interval: 5
+            Timeout: 2
+            Retries: 3
+          User: '1337'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref OrderEnvoyLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: envoy
+        - Name: xray-daemon
+          Image: amazon/aws-xray-daemon
+          Essential: true
+          User: '1337'
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: udp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref OrderXrayLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: xray
+      RequiresCompatibilities:
+        - EC2
+      Cpu: '512'
+      Memory: '1024'
+      ProxyConfiguration:
+        Type: APPMESH
+        ContainerName: envoy
+        ProxyConfigurationProperties:
+          - Name: IgnoredUID
+            Value: '1337'
+          - Name: ProxyIngressPort
+            Value: '15000'
+          - Name: ProxyEgressPort
+            Value: '15001'
+          - Name: AppPorts
+            Value: '7000'
+          - Name: EgressIgnoredIPs
+            Value: 169.254.170.2,169.254.169.254
+
+  OrderService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: order-service
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref OrderTaskDefinition
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: EC2
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref ECSSecurityGroup
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+            - !Ref PrivateSubnet3
+      ServiceRegistries:
+        - RegistryArn: !GetAtt OrderServiceDiscovery.Arn
+
+  #============================================================
+  # User Service Task Definition and Service
+  #============================================================
+  UserTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: 
+      - UserVirtualNode
+    Properties:
+      Family: user-micro-service
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt ECSTaskRole.Arn
+      ContainerDefinitions:
+        - Name: user-micro-service
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${UserRepository}:latest'
+          Essential: true
+          PortMappings:
+            - ContainerPort: 4000
+              Protocol: tcp
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: PORT
+              Value: '4000'
+            - Name: APPMESH_VIRTUAL_NODE_NAME
+              Value: !Sub 'mesh/${InventoryMesh.MeshName}/virtualNode/user-ms-vn'
+          Secrets:
+            - Name: DATABASE_URL
+              ValueFrom: !Ref DatabaseURLSecret
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref UserLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: user-ms
+          DependsOn:
+            - ContainerName: envoy
+              Condition: HEALTHY
+        - Name: envoy
+          Image: !Sub '840364872350.dkr.ecr.${AWS::Region}.amazonaws.com/aws-appmesh-envoy:v1.25.4.0-prod'
+          Essential: true
+          Environment:
+            - Name: APPMESH_VIRTUAL_NODE_NAME
+              Value: !Sub 'mesh/${InventoryMesh.MeshName}/virtualNode/user-ms-vn'
+            - Name: ENABLE_ENVOY_XRAY_TRACING
+              Value: '1'
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -s http://localhost:9901/server_info | grep state | grep -q LIVE
+            StartPeriod: 10
+            Interval: 5
+            Timeout: 2
+            Retries: 3
+          User: '1337'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref UserEnvoyLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: envoy
+        - Name: xray-daemon
+          Image: amazon/aws-xray-daemon
+          Essential: true
+          User: '1337'
+          PortMappings:
+            - ContainerPort: 2000
+              Protocol: udp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref UserXrayLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: xray
+      RequiresCompatibilities:
+        - EC2
+      Cpu: '512'
+      Memory: '1024'
+      ProxyConfiguration:
+        Type: APPMESH
+        ContainerName: envoy
+        ProxyConfigurationProperties:
+          - Name: IgnoredUID
+            Value: '1337'
+          - Name: ProxyIngressPort
+            Value: '15000'
+          - Name: ProxyEgressPort
+            Value: '15001'
+          - Name: AppPorts
+            Value: '4000'
+          - Name: EgressIgnoredIPs
+            Value: 169.254.170.2,169.254.169.254
+
+  UserService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: user-service
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref UserTaskDefinition
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      LaunchType: EC2
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref ECSSecurityGroup
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+            - !Ref PrivateSubnet3
+      ServiceRegistries:
+        - RegistryArn: !GetAtt UserServiceDiscovery.Arn
+
+  #============================================================
+  # Frontend Service Task Definition and Service
+  #============================================================
+  FrontendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: frontend-ui
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt ECSTaskRole.Arn
+      ContainerDefinitions:
+        - Name: frontend-ui
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${FrontendRepository}:latest'
+          Essential: true
+          PortMappings:
+            - ContainerPort: 3000
+              HostPort: 3000
+              Protocol: tcp
+          Environment:
+            - Name: PRODUCTS_DOMAIN
+              Value: product-ms.inventory-mesh.local:5000
+            - Name: USERS_DOMAIN
+              Value: user-ms.inventory-mesh.local:4000
+            - Name: ORDERS_DOMAIN
+              Value: order-ms.inventory-mesh.local:7000
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref FrontendLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: frontend-ui
+        - Name: xray-daemon
+          Image: amazon/aws-xray-daemon
+          Essential: true
+          User: '1337'
+          PortMappings:
+            - ContainerPort: 2000
+              HostPort: 2000
+              Protocol: udp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref FrontendXrayLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: xray
+      RequiresCompatibilities:
+        - EC2
+      Cpu: '256'
+      Memory: '512'
+
+  FrontendService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - ALBListener
+    Properties:
+      ServiceName: frontend-ui
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref FrontendTaskDefinition
+      PlacementStrategies:
+        - Type: spread
+          Field: attribute:ecs.availability-zone
+        - Type: spread
+          Field: instanceId
+      SchedulingStrategy: REPLICA
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DesiredCount: 1
+      HealthCheckGracePeriodSeconds: 0
+      LaunchType: EC2
+      AvailabilityZoneRebalancing: ENABLED
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref ECSSecurityGroup
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+            - !Ref PrivateSubnet3
+      LoadBalancers:
+        - ContainerName: frontend-ui
+          ContainerPort: 3000
+          TargetGroupArn: !Ref FrontendTargetGroup
+
+  #============================================================
+  # Application Load Balancer
+  #============================================================
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${AWS::StackName}-alb'
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+        - !Ref PublicSubnet3
+      Type: application
+      IpAddressType: ipv4
+
+  FrontendTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${AWS::StackName}-frontend-tg'
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VPC
+      TargetType: ip
+      HealthCheckEnabled: true
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref FrontendTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+Outputs:
+  VpcId:
+    Description: The ID of the VPC
+    Value: !Ref VPC
+
+  CloudMapNamespaceNameId:
+    Description: The name of the Cloud Map namespace
+    Value: !GetAtt CloudMapNamespace.Id
+
+  ProductServiceEndpoint:
+    Description: The DNS name for the Product service
+    Value: product-ms.inventory-mesh.local
+
+  OrderServiceEndpoint:
+    Description: The DNS name for the Order service
+    Value: order-ms.inventory-mesh.local
+
+  UserServiceEndpoint:
+    Description: The DNS name for the User service
+    Value: user-ms.inventory-mesh.local
+
+  LoadBalancerDNS:
+    Description: DNS name of the Application Load Balancer
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+
+  ECSClusterName:
+    Description: Name of the ECS Cluster
+    Value: !Ref ECSCluster
+
+  DatabaseEndpoint:
+    Description: Aurora PostgreSQL endpoint
+    Value: !GetAtt AuroraCluster.Endpoint.Address
+
+  DatabaseSecret:
+    Description: Secret containing database credentials
+    Value: !Ref DBSecret

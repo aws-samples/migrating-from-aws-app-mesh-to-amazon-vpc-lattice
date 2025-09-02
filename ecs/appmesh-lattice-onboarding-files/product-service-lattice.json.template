@@ -1,13 +1,8 @@
 {
-    "cluster": "<CLUSTER_NAME>",
-    "serviceName": "product-service",
-    "taskDefinition": "product-micro-service",
+    "cluster": "CLUSTER_NAME",
+    "serviceName": "product-lattice-service",
+    "taskDefinition": "product-micro-service:PRODUCT_TASKDEF_LATTICE_REVISION",
     "availabilityZoneRebalancing": "ENABLED",
-    "serviceRegistries": [
-      {
-      "registryArn": "<SERVICE_DISCOVERY_ARN>"
-      }
-    ],
     "desiredCount": 1,
     "launchType": "EC2",
     "capacityProviderStrategy": [],
@@ -19,7 +14,6 @@
         "maximumPercent": 200,
         "minimumHealthyPercent": 100
     },
-    "placementConstraints": [],
     "placementStrategy": [
         {
             "type": "spread",
@@ -33,12 +27,12 @@
     "networkConfiguration": {
         "awsvpcConfiguration": {
             "subnets": [
-              "<SUBNET1>",
-              "<SUBNET2>",
-              "<SUBNET3>"
+              "SUBNET1",
+              "SUBNET2",
+              "SUBNET3"
             ],
             "securityGroups": [
-                "<SECURITY_GROUP_ID"
+                "SECURITY_GROUP_ID"
             ],
             "assignPublicIp": "DISABLED"
         }
@@ -50,5 +44,12 @@
     },
     "enableECSManagedTags": true,
     "propagateTags": "NONE",
-    "enableExecuteCommand": false
+    "enableExecuteCommand": false,
+    "vpcLatticeConfigurations": [
+    {
+      "roleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsLatticeRole",
+      "targetGroupArn": "arn:aws:vpc-lattice:us-west-2:ACCOUNT_ID:targetgroup/LATTICE_PRODUCT_TG_ID",
+      "portName": "product-ms-tcp-5000"
+    }
+  ]
 }

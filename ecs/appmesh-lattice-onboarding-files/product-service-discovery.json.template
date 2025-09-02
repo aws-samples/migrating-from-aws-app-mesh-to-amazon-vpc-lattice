@@ -1,6 +1,6 @@
 {
   "Name": "product-ms",
-  "NamespaceId": "<NAMESPACE_ID>",
+  "NamespaceId": "CLOUDMAP_NAMESPACE_ID",
   "DnsConfig": {
     "DnsRecords": [
       {

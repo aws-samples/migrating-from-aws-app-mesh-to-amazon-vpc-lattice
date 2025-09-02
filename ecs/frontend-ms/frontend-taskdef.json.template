@@ -2,7 +2,7 @@
     "containerDefinitions": [
         {
             "name": "frontend-ui",
-            "image": "<ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/frontend-ui:latest",
+            "image": "ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/frontend-ui:latest",
             "cpu": 0,
             "portMappings": [
                 {
@@ -66,8 +66,8 @@
         }
     ],
     "family": "frontend-ui",
-    "taskRoleArn": "<ECS_TASK_ROLE_ARN>",
-    "executionRoleArn": "<ECS_TASK_EXECUTION_ROLE_ARN>",
+    "taskRoleArn": "ECS_TASK_ROLE",
+    "executionRoleArn": "ECS_TASK_EXECUTION_ROLE",
     "networkMode": "awsvpc",
     "volumes": [],
     "placementConstraints": [],

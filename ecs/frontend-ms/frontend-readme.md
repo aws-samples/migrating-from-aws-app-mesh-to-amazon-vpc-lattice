@@ -7,7 +7,8 @@ This guide provides instructions to launch Frontend UI service
 - Existing Public ALB with HTTPS listener in us-west-2 region
 - Two Target groups (`blue` and `green`) with 'ip' target type, protocol HTTP, and port 3000
 - ALB Listener rule with `blue` target group receiving 100% of the requests and `green` target group receiving 0% of the requests
-- Ensure ALB security group can send traffic to ECS tasks and receive HTTPs traffic from ECS tasks 
+- Ensure ALB security group can send traffic to ECS tasks and receive HTTPs traffic from ECS tasks
+- For the purposes of this workshop, we will use the same Security Group, Subnets, ECS Task role and Task Execution role for all the microservices
 
 ## Step 1: Register Task Definition
 
@@ -15,18 +16,31 @@ This guide provides instructions to launch Frontend UI service
 cd ../frontend-ms/
 ```
 
-- Update `frontend-taskdef.json` and replace the placeholders for ACCOUNT_ID, ECS_TASK_ROLE_ARN, ECS_TASK_EXECUTION_ROLE_ARN
-- Ensure the ECS_TASK_ROLE has at least the AWS Managed Policy `CloudWatchFullAccessV2` attached
-- Ensure the ECS_TASK_EXECUTION_ROLE has at least the AWS Managed Policies `AmazonECSTaskExecutionRolePolicy`, `AmazonSSMReadOnlyAccess`, and `CloudWatchLogsFullAccess` attached
+- Collect and store account details required for this section of the workshop.
+
+```bash
+chmod +x collect_account_details.sh
+. ./collect_account_details.sh
+```
+
+- Run commands to modify placeholders for ACCOUNT_ID, ECS_TASK_ROLE, ECS_TASK_EXECUTION_ROLE.
+
+```bash
+sed 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' frontend-taskdef.json.template > frontend-taskdef.json
+sed -i '' 's/ECS_TASK_ROLE/'$ECS_TASK_ROLE'/g' frontend-taskdef.json
+sed -i '' 's/ECS_TASK_EXECUTION_ROLE/'$ECS_TASK_EXECUTION_ROLE'/g' frontend-taskdef.json
+```
+
+**Note:** Nginx server in Frontend UI application expects valid DNS values for order-ms, user-ms and product-ms services. For the purposes of this workshop, we only deployed product-ms service, so we will use product-ms App Mesh URL for 3 environment variables in the task definition. If you choose to fully deploy order-ms and user-ms, update USERS_DOMAIN environment variable value in `frontend-taskdef.json` with user-ms.inventory-mesh.local:4000 and ORDERS_DOMAIN environment variable value with order-ms.inventory-mesh.local:7000.
+
 - Execute below command to register the task definition
 
 ```bash
-aws ecs register-task-definition \
+export FRONTEND_TASKDEF_REVISION=`aws ecs register-task-definition \
   --cli-input-json file://frontend-taskdef.json \
-  --region us-west-2
+  --region us-west-2 --query "taskDefinition.revision" --output text`
+echo "export FRONTEND_TASKDEF_REVISION=$FRONTEND_TASKDEF_REVISION" >> $GIT_BASE_DIR/account_details.sh
 ```
-
-**Note:** Nginx server in Frontend UI application expects valid DNS values for order-ms, user-ms and product-ms services. For the purposes of this workshop, we only deployed product-ms service, so we will use product-ms App Mesh URL for 3 environment variables in the task definition. If you choose to fully deploy order-ms and user-ms, update USERS_DOMAIN environment variable value with user-ms.inventory-mesh.local:4000 and ORDERS_DOMAIN environment variable value with order-ms.inventory-mesh.local:7000.
 
 ## Step 2: Create Log Groups
 
@@ -37,31 +51,7 @@ chmod +x create-log-groups.sh
 sh create-log-groups.sh
 ```
 
-## Step 3: Ensure task role has permissions to use X-Ray. Replace ECS_TASK_ROLE with your task role
-
-```bash
-aws iam put-role-policy \
-  --role-name <ECS_TASK_ROLE> \
-  --policy-name xrayPolicy \
-  --policy-document '{
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Effect": "Allow",
-        "Action": [
-          "xray:PutTraceSegments",
-          "xray:PutTelemetryRecords",
-          "xray:GetSamplingRules",
-          "xray:GetSamplingTargets",
-          "xray:GetSamplingStatisticSummaries"
-        ],
-        "Resource": "*"
-      }
-    ]
-  }'
-```
-
-## Step 4: Create an IAM role to allow ECS service to update the ALB listener rule target group weights for blue green deployment.
+## Step 3: Create an IAM role to allow ECS service to update the ALB listener rule target group weights for blue green deployment.
 
 - Create trust policy for ECS service
 
@@ -99,11 +89,26 @@ aws iam attach-role-policy \
       --policy-arn arn:aws:iam::aws:policy/AmazonECSInfrastructureRolePolicyForLoadBalancers
 ```
 
-## Step 5: Create ECS Service
+## Step 4: Create ECS Service
 
-- Update `frontend-service.json` and replace the placeholders for CLUSTER_NAME, TARGET_GROUP_ARN, SUBNET1/2/3 (keep as many private subnets needed), and SECURITY_GROUP
-- Ensure the Security Group can receive traffic at least from ALB security group on port 3000
-- Execute below command to create the service
+- Run commands to modify placeholders CLUSTER_NAME, SUBNET1/2/3, task SECURITY_GROUP_ID, etc.
+
+```bash
+sed 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' frontend-service.json.template > frontend-service.json
+sed -i '' 's/CLUSTER_NAME/'$CLUSTER_NAME'/g' frontend-service.json
+sed -i '' 's/FRONTEND_TASKDEF_REVISION/'$FRONTEND_TASKDEF_REVISION'/g' frontend-service.json
+sed -i '' 's/SECURITY_GROUP_ID/'$SECURITY_GROUP_ID'/g' frontend-service.json
+sed -i '' 's/SUBNET1/'$SUBNET1'/g' frontend-service.json
+sed -i '' 's/SUBNET2/'$SUBNET2'/g' frontend-service.json
+sed -i '' 's/SUBNET3/'$SUBNET3'/g' frontend-service.json
+sed -i '' 's#BLUE_TARGET_GROUP_ARN#'$BLUE_TARGET_GROUP_ARN'#g' frontend-service.json
+sed -i '' 's#GREEN_TARGET_GROUP_ARN#'$GREEN_TARGET_GROUP_ARN'#g' frontend-service.json
+sed -i '' 's#LISTENER_RULE_ARN#'$LISTENER_RULE_ARN'#g' frontend-service.json
+```
+
+- Ensure the ECS Task Security Group can receive traffic at least from ALB security group on port 3000
+
+- Create the ECS service
 
 ```bash
 aws ecs create-service \
@@ -111,12 +116,12 @@ aws ecs create-service \
   --region us-west-2
 ```
 
-## Step 6: Verify the ECS Service
+## Step 5: Verify the ECS Service
 
 1. Check that the new task is running:
 
 ```bash
-aws ecs list-tasks --cluster CLUSTER_NAME --service-name frontend-ui --region us-west-2
+aws ecs list-tasks --cluster $CLUSTER_NAME --service-name frontend-ui --region us-west-2
 ```
 
 2. Test the frontend-ui service using the appropriate DNS record for the PUBLIC ALB

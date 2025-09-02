@@ -1,0 +1,60 @@
+{
+  "family": "product-micro-service",
+  "networkMode": "awsvpc",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ECS_TASK_EXECUTION_ROLE",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ECS_TASK_ROLE",
+  "containerDefinitions": [
+    {
+      "name": "product-micro-service",
+      "image": "ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/product-ms:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5000,
+          "hostPort": 5000,
+          "protocol": "tcp",
+          "name": "product-ms-tcp-5000"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "5000"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:us-west-2:ACCOUNT_ID:parameter/AURORA_PG_PARAMETER"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/product-ms",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "product-ms"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "pgrep node || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ],
+  "requiresCompatibilities": [
+    "EC2"
+  ],
+  "cpu": "512",
+  "memory": "1024"
+}

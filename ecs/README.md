@@ -8,7 +8,7 @@ This application serves as our practical example throughout this guide, demonstr
 
 If you have an application already running on AWS App Mesh, you can skip the initial setup and use the following guide for [AppMesh to Lattice migration](appmesh-lattice-onboarding-files/vpc-lattice-migration-readme.md).
 
-To run this as a hands-on workshop, continue with the step-by-step instructions below:
+To run this as a hands-on workshop, continue with the step-by-step instructions below. The instructions and scripts provided in the workshop use shell scripting on a Linux system. Make necessary changes to fit your environment.
 
 # Prerequisites
 
@@ -22,33 +22,47 @@ To get stared with this deployment there are some prerequisites to consider.
 
 4. AWS Systems Manager Parameter Store: Provision a SecureString parameter to store the postgresql:// connection string of the database provisioned in step 2.
 
-5. *Latest* AWS CLI version setup with appropriate profile/session credentials.
+5. Install *latest* AWS CLI version and login with appropriate profile/session credentials.
 
 # Migration Steps
 
 ## Build and push application container images to ECR
 
-1. Clone the repository
+1. Clone this git repository.
 
 ```bash 
 git clone [repository-url]
 ```
 
-2. Authenticate with ECR
+2. Setup base directory for workshop execution. If you're disconnected from your AWS CLI session or from the terminal/SSH session at any time during the workshop, login to AWS CLI in the new terminal and execute `. <GIT_REPO_PATH>/account_details.sh`, before running the workshop steps. Executing account_details.sh will set the previously stored variable values required for workshop execution.
 
 ```bash
-export ACCOUNT_ID=`aws sts get-caller-identity --query "Account" --output text`;
+cd migrating-from-aws-app-mesh-to-amazon-vpc-lattice/ecs
+export GIT_BASE_DIR=$PWD
+echo "export GIT_BASE_DIR=$GIT_BASE_DIR" > account_details.sh
+chmod +x account_details.sh
+```
+
+3. Collect and store account details required for this section of the workshop.
+
+```bash
+chmod +x collect_account_details.sh
+. ./collect_account_details.sh
+```
+
+4. Authenticate with ECR
+
+```bash
 aws ecr get-login-password --region us-west-2 | \
 docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com
 ```
    
-3. Build a container image and push to ECR repo:
+5. Build a container image and push to ECR repo:
 
-    a. Navigate to the microservice directory
+    a. Navigate to the microservice directory and set the SERVICE_NAME variable as the present working directory.
 
     ```bash 
-    # For Frontend UI service
-    cd ecs-express-app-lattice/frontend-ms/frontend-ui
+    cd $GIT_BASE_DIR/frontend-ms/frontend-ui
     export SERVICE_NAME=${PWD##*/}
     ```
 
@@ -64,8 +78,12 @@ docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.us-west-2.amazo
    c. Repeat below commands for each microservice `product-ms, user-ms and order-ms`.
 
    ```bash
-   cd ../../product-ms
-   export SERVICE_NAME=product-ms
+   #Change directory name to match microservice
+   cd $GIT_BASE_DIR/product-ms
+   ```
+
+   ```bash
+   export SERVICE_NAME=${PWD##*/}
    docker buildx build \
       --platform linux/amd64,linux/arm64 \
       -t $ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/$SERVICE_NAME:latest \
@@ -82,8 +100,8 @@ aws appmesh create-mesh --mesh-name inventory-mesh --spec "egressFilter={type=AL
 
 2. Create a namespace in AWS Cloud Map:
 
-```
-aws servicediscovery create-private-dns-namespace --name inventory-mesh.local --vpc <vpc-id> --region us-west-2
+```bash
+aws servicediscovery create-private-dns-namespace --name inventory-mesh.local --vpc $VPC_ID --region us-west-2
 ```
 Note:  Wait for the namespace to be created successfully (1-2 minutes)
 
@@ -117,6 +135,6 @@ After validating the VPC Lattice migration with the Frontend UI application conn
 
 We would like to thank the following individuals for their valuable contributions, testing, and recommendations that helped improve this migration guide:
 
-- **Justin Haydt**, *[AWS solutions Architect]* - Testing and validation of migration scenarios
+- **Justin Haydt**, *[AWS Solutions Architect]* - Testing and validation of migration scenarios
 - **Henrique Santana**, *[Principal Cloud Support Engineer]* - Architecture recommendations and best practices
 - **Hardeep Singh Tiwana**, *[Sr Technical Account Manager]* - Validations and optimization suggestions

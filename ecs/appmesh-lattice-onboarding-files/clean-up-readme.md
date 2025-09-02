@@ -6,19 +6,19 @@ This guide provides step-by-step instructions to clean-up resources explicitly c
 
 ```bash
 aws ecs delete-service \
-  --cluster <CLUSTER_NAME> \
+  --cluster $CLUSTER_NAME \
   --service product-service \
   --force \
   --region us-west-2
 
 aws ecs delete-service \
-  --cluster <CLUSTER_NAME> \
+  --cluster $CLUSTER_NAME \
   --service product-lattice-service \
   --force \
   --region us-west-2
 
 aws ecs delete-service \
-  --cluster <CLUSTER_NAME> \
+  --cluster $CLUSTER_NAME \
   --service frontend-ui \
   --force \
   --region us-west-2
@@ -51,11 +51,13 @@ aws appmesh delete-virtual-node \
 
 # Delete Service Discovery Service (in Cloud Map namespace)
 
-aws servicediscovery delete-service --id <service-id> --region us-west-2
+aws servicediscovery delete-service --id $CLOUDMAP_SERVICE_ID --region us-west-2
 
 # Delete Cloud Map namespace
 
-aws servicediscovery delete-namespace --id <namespace-id> --region us-west-2
+aws servicediscovery delete-namespace \
+  --id `aws servicediscovery list-namespaces --filters Name=NAME,Values=inventory-mesh.local --region us-west-2 --query "Namespaces[*].Id" --output text` \
+  --region us-west-2
 
 # Delete mesh in App Mesh
 
@@ -68,27 +70,29 @@ aws appmesh delete-mesh --mesh-name inventory-mesh --region us-west-2
 # Delete Lattice Service association with Service Network
 
 aws vpc-lattice delete-service-network-service-association \
-  --service-network-service-association-identifier <association-id> \
+  --service-network-service-association-identifier $LATTICE_PRODUCT_SNSA_ID \
   --region us-west-2
 
 # Delete Lattice Service
 
-aws vpc-lattice delete-service --service-identifier <service-id> --region us-west-2
+aws vpc-lattice delete-service --service-identifier $LATTICE_PRODUCT_SVC_ID --region us-west-2
 
 # Delete Lattice Target Group
 
-aws vpc-lattice delete-target-group --target-group-identifier <target-group-id> --region us-west-2
+aws vpc-lattice delete-target-group --target-group-identifier $LATTICE_PRODUCT_TG_ID --region us-west-2
 
 # Delete VPC association with Service Network
 
 aws vpc-lattice delete-service-network-vpc-association \
-  --service-network-vpc-association-identifier <association-id> \
+  --service-network-vpc-association-identifier $LATTICE_SNVA_ID \
   --region us-west-2
+```
 
-# Delete VPC Lattice Service Network
+- Delete VPC Lattice Service Network (wait for VPC association deletion to succeed, may take a couple of minutes)
 
+```bash
 aws vpc-lattice delete-service-network \
-  --service-network-identifier <service-network-id> --region us-west-2
+  --service-network-identifier $LATTICE_SN_ID --region us-west-2
 ```
 
 ## Step 5: Clean up ECR repos

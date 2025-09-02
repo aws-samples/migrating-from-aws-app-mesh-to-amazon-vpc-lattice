@@ -1,7 +1,7 @@
 {
     "cluster": "CLUSTER_NAME",
     "serviceName": "frontend-ui",
-    "taskDefinition": "frontend-ui:REVISION",
+    "taskDefinition": "frontend-ui:FRONTEND_TASKDEF_REVISION",
     "availabilityZoneRebalancing": "ENABLED",
     "loadBalancers": [
         {
@@ -11,7 +11,7 @@
             "advancedConfiguration": {
                 "alternateTargetGroupArn": "GREEN_TARGET_GROUP_ARN",
                 "productionListenerRule": "LISTENER_RULE_ARN",
-                "roleArn": "ALB_ROLE_ARN"
+                "roleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsInfrastructureRoleForLoadBalancers"
             }
         }
     ],
@@ -25,7 +25,7 @@
             "rollback": false
         },
         "strategy": "BLUE_GREEN",
-        "bakeTimeInMinutes": NUMBER,
+        "bakeTimeInMinutes": 0,
         "maximumPercent": 200,
         "minimumHealthyPercent": 100
     },
@@ -48,7 +48,7 @@
                 "SUBNET3"
             ],
             "securityGroups": [
-                "SECURITY_GROUP"
+                "SECURITY_GROUP_ID"
             ],
             "assignPublicIp": "DISABLED"
         }

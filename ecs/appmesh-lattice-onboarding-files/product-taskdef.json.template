@@ -1,12 +1,12 @@
 {
   "family": "product-micro-service",
   "networkMode": "awsvpc",
-  "executionRoleArn": "<ECS_TASK_EXECUTION_ROLE_ARN>",
-  "taskRoleArn": "<ECS_TASK_ROLE_ARN>",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ECS_TASK_EXECUTION_ROLE",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ECS_TASK_ROLE",
   "containerDefinitions": [
     {
       "name": "product-micro-service",
-      "image": "<ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/product-ms:latest",
+      "image": "ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/product-ms:latest",
       "essential": true,
       "portMappings": [
         {
@@ -33,7 +33,7 @@
       "secrets": [
         {
           "name": "DATABASE_URL",
-          "valueFrom": "<AURORA_PG_PARAMETER_ARN>"
+          "valueFrom": "arn:aws:ssm:us-west-2:ACCOUNT_ID:parameter/AURORA_PG_PARAMETER"
         }
       ],
       "logConfiguration": {

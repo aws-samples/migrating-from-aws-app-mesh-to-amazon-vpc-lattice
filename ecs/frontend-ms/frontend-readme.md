@@ -26,9 +26,9 @@ chmod +x collect_account_details.sh
 - Run commands to modify placeholders for ACCOUNT_ID, ECS_TASK_ROLE, ECS_TASK_EXECUTION_ROLE.
 
 ```bash
-sed 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' frontend-taskdef.json.template > frontend-taskdef.json
-sed -i '' 's/ECS_TASK_ROLE/'$ECS_TASK_ROLE'/g' frontend-taskdef.json
-sed -i '' 's/ECS_TASK_EXECUTION_ROLE/'$ECS_TASK_EXECUTION_ROLE'/g' frontend-taskdef.json
+perl -pe 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' frontend-taskdef.json.template > frontend-taskdef.json
+perl -pi -e 's/ECS_TASK_ROLE/'$ECS_TASK_ROLE'/g' frontend-taskdef.json
+perl -pi -e 's/ECS_TASK_EXECUTION_ROLE/'$ECS_TASK_EXECUTION_ROLE'/g' frontend-taskdef.json
 ```
 
 **Note:** Nginx server in Frontend UI application expects valid DNS values for order-ms, user-ms and product-ms services. For the purposes of this workshop, we only deployed product-ms service, so we will use product-ms App Mesh URL for 3 environment variables in the task definition. If you choose to fully deploy order-ms and user-ms, update USERS_DOMAIN environment variable value in `frontend-taskdef.json` with user-ms.inventory-mesh.local:4000 and ORDERS_DOMAIN environment variable value with order-ms.inventory-mesh.local:7000.
@@ -94,16 +94,16 @@ aws iam attach-role-policy \
 - Run commands to modify placeholders CLUSTER_NAME, SUBNET1/2/3, task SECURITY_GROUP_ID, etc.
 
 ```bash
-sed 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' frontend-service.json.template > frontend-service.json
-sed -i '' 's/CLUSTER_NAME/'$CLUSTER_NAME'/g' frontend-service.json
-sed -i '' 's/FRONTEND_TASKDEF_REVISION/'$FRONTEND_TASKDEF_REVISION'/g' frontend-service.json
-sed -i '' 's/SECURITY_GROUP_ID/'$SECURITY_GROUP_ID'/g' frontend-service.json
-sed -i '' 's/SUBNET1/'$SUBNET1'/g' frontend-service.json
-sed -i '' 's/SUBNET2/'$SUBNET2'/g' frontend-service.json
-sed -i '' 's/SUBNET3/'$SUBNET3'/g' frontend-service.json
-sed -i '' 's#BLUE_TARGET_GROUP_ARN#'$BLUE_TARGET_GROUP_ARN'#g' frontend-service.json
-sed -i '' 's#GREEN_TARGET_GROUP_ARN#'$GREEN_TARGET_GROUP_ARN'#g' frontend-service.json
-sed -i '' 's#LISTENER_RULE_ARN#'$LISTENER_RULE_ARN'#g' frontend-service.json
+perl -pe 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' frontend-service.json.template > frontend-service.json
+perl -pi -e 's/CLUSTER_NAME/'$CLUSTER_NAME'/g' frontend-service.json
+perl -pi -e 's/FRONTEND_TASKDEF_REVISION/'$FRONTEND_TASKDEF_REVISION'/g' frontend-service.json
+perl -pi -e 's/SECURITY_GROUP_ID/'$SECURITY_GROUP_ID'/g' frontend-service.json
+perl -pi -e 's/SUBNET1/'$SUBNET1'/g' frontend-service.json
+perl -pi -e 's/SUBNET2/'$SUBNET2'/g' frontend-service.json
+perl -pi -e 's/SUBNET3/'$SUBNET3'/g' frontend-service.json
+perl -pi -e 's#BLUE_TARGET_GROUP_ARN#'$BLUE_TARGET_GROUP_ARN'#g' frontend-service.json
+perl -pi -e 's#GREEN_TARGET_GROUP_ARN#'$GREEN_TARGET_GROUP_ARN'#g' frontend-service.json
+perl -pi -e 's#LISTENER_RULE_ARN#'$LISTENER_RULE_ARN'#g' frontend-service.json
 ```
 
 - Ensure the ECS Task Security Group can receive traffic at least from ALB security group on port 3000

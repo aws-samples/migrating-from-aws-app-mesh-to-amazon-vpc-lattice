@@ -66,8 +66,8 @@
         }
     ],
     "family": "frontend-ui",
-    "taskRoleArn": "ECS_TASK_ROLE",
-    "executionRoleArn": "ECS_TASK_EXECUTION_ROLE",
+    "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ECS_TASK_EXECUTION_ROLE",
+    "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ECS_TASK_ROLE",
     "networkMode": "awsvpc",
     "volumes": [],
     "placementConstraints": [],

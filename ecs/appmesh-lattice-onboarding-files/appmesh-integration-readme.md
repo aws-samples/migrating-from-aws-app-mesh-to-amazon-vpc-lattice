@@ -48,7 +48,7 @@ echo "export CLOUDMAP_NAMESPACE_ID=$CLOUDMAP_NAMESPACE_ID" >> $GIT_BASE_DIR/acco
 2. Create `product-service-discovery.json` file from the template and create a Cloud Map service:
 
 ```bash
-sed 's/CLOUDMAP_NAMESPACE_ID/'$CLOUDMAP_NAMESPACE_ID'/g' product-service-discovery.json.template > product-service-discovery.json
+perl -pe 's/CLOUDMAP_NAMESPACE_ID/'$CLOUDMAP_NAMESPACE_ID'/g' product-service-discovery.json.template > product-service-discovery.json
 export CLOUDMAP_SERVICE_ID=`aws servicediscovery create-service \
   --cli-input-json file://product-service-discovery.json \
   --region us-west-2 --query "Service.Id" --output text`
@@ -67,10 +67,10 @@ chmod +x collect_account_details.sh
 - Run commands to modify placeholders AURORA_PG_PARAMETER, ACCOUNT_ID, ECS_TASK_ROLE and ECS_TASK_EXECUTION_ROLE.
 
 ```bash
-sed 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' product-taskdef.json.template > product-taskdef.json
-sed -i '' 's/ECS_TASK_ROLE/'$ECS_TASK_ROLE'/g' product-taskdef.json
-sed -i '' 's/ECS_TASK_EXECUTION_ROLE/'$ECS_TASK_EXECUTION_ROLE'/g' product-taskdef.json
-sed -i '' 's/AURORA_PG_PARAMETER/'$AURORA_PG_PARAMETER'/g' product-taskdef.json
+perl -pe 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' product-taskdef.json.template > product-taskdef.json
+perl -pi -e 's/ECS_TASK_ROLE/'$ECS_TASK_ROLE'/g' product-taskdef.json
+perl -pi -e 's/ECS_TASK_EXECUTION_ROLE/'$ECS_TASK_EXECUTION_ROLE'/g' product-taskdef.json
+perl -pi -e 's/AURORA_PG_PARAMETER/'$AURORA_PG_PARAMETER'/g' product-taskdef.json
 ```
 
 - Execute below command to register the task definition
@@ -143,14 +143,14 @@ aws iam put-role-policy \
 - Run commands to modify placeholders CLUSTER_NAME, SUBNET1/2/3, task SECURITY_GROUP_ID, etc.
 
 ```bash
-sed 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' product-service.json.template > product-service.json
-sed -i '' 's/CLUSTER_NAME/'$CLUSTER_NAME'/g' product-service.json
-sed -i '' 's/PRODUCT_TASKDEF_REVISION/'$PRODUCT_TASKDEF_REVISION'/g' product-service.json
-sed -i '' 's/CLOUDMAP_SERVICE_ID/'$CLOUDMAP_SERVICE_ID'/g' product-service.json
-sed -i '' 's/SECURITY_GROUP_ID/'$SECURITY_GROUP_ID'/g' product-service.json
-sed -i '' 's/SUBNET1/'$SUBNET1'/g' product-service.json
-sed -i '' 's/SUBNET2/'$SUBNET2'/g' product-service.json
-sed -i '' 's/SUBNET3/'$SUBNET3'/g' product-service.json
+perl -pe 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' product-service.json.template > product-service.json
+perl -pi -e 's/CLUSTER_NAME/'$CLUSTER_NAME'/g' product-service.json
+perl -pi -e 's/PRODUCT_TASKDEF_REVISION/'$PRODUCT_TASKDEF_REVISION'/g' product-service.json
+perl -pi -e 's/CLOUDMAP_SERVICE_ID/'$CLOUDMAP_SERVICE_ID'/g' product-service.json
+perl -pi -e 's/SECURITY_GROUP_ID/'$SECURITY_GROUP_ID'/g' product-service.json
+perl -pi -e 's/SUBNET1/'$SUBNET1'/g' product-service.json
+perl -pi -e 's/SUBNET2/'$SUBNET2'/g' product-service.json
+perl -pi -e 's/SUBNET3/'$SUBNET3'/g' product-service.json
 ```
 
 - Create the ECS service

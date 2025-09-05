@@ -20,10 +20,10 @@ cd ../appmesh-lattice-onboarding-files/
 - Run commands to modify placeholders AURORA_PG_PARAMETER, ACCOUNT_ID, ECS_TASK_ROLE and ECS_TASK_EXECUTION_ROLE.
 
 ```bash
-sed 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' product-taskdef-lattice.json.template > product-taskdef-lattice.json
-sed -i '' 's/ECS_TASK_ROLE/'$ECS_TASK_ROLE'/g' product-taskdef-lattice.json
-sed -i '' 's/ECS_TASK_EXECUTION_ROLE/'$ECS_TASK_EXECUTION_ROLE'/g' product-taskdef-lattice.json
-sed -i '' 's/AURORA_PG_PARAMETER/'$AURORA_PG_PARAMETER'/g' product-taskdef-lattice.json
+perl -pe 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' product-taskdef-lattice.json.template > product-taskdef-lattice.json
+perl -pi -e 's/ECS_TASK_ROLE/'$ECS_TASK_ROLE'/g' product-taskdef-lattice.json
+perl -pi -e 's/ECS_TASK_EXECUTION_ROLE/'$ECS_TASK_EXECUTION_ROLE'/g' product-taskdef-lattice.json
+perl -pi -e 's/AURORA_PG_PARAMETER/'$AURORA_PG_PARAMETER'/g' product-taskdef-lattice.json
 ```
 
 - Execute below command to register the task definition
@@ -173,14 +173,14 @@ aws iam attach-role-policy --role-name ecsLatticeRole --policy-arn arn:aws:iam::
 - Replace placeholders CLUSTER_NAME, SUBNET1/2/3, SECURITY_GROUP_ID, LATTICE_ROLE, and LATTICE_TARGET_GROUP, etc.
 
 ```bash
-sed 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' product-service-lattice.json.template > product-service-lattice.json
-sed -i '' 's/CLUSTER_NAME/'$CLUSTER_NAME'/g' product-service-lattice.json
-sed -i '' 's/PRODUCT_TASKDEF_LATTICE_REVISION/'$PRODUCT_TASKDEF_LATTICE_REVISION'/g' product-service-lattice.json
-sed -i '' 's/SECURITY_GROUP_ID/'$SECURITY_GROUP_ID'/g' product-service-lattice.json
-sed -i '' 's/SUBNET1/'$SUBNET1'/g' product-service-lattice.json
-sed -i '' 's/SUBNET2/'$SUBNET2'/g' product-service-lattice.json
-sed -i '' 's/SUBNET3/'$SUBNET3'/g' product-service-lattice.json
-sed -i '' 's/LATTICE_PRODUCT_TG_ID/'$LATTICE_PRODUCT_TG_ID'/g' product-service-lattice.json
+perl -pe 's/ACCOUNT_ID/'$ACCOUNT_ID'/g' product-service-lattice.json.template > product-service-lattice.json
+perl -pi -e 's/CLUSTER_NAME/'$CLUSTER_NAME'/g' product-service-lattice.json
+perl -pi -e 's/PRODUCT_TASKDEF_LATTICE_REVISION/'$PRODUCT_TASKDEF_LATTICE_REVISION'/g' product-service-lattice.json
+perl -pi -e 's/SECURITY_GROUP_ID/'$SECURITY_GROUP_ID'/g' product-service-lattice.json
+perl -pi -e 's/SUBNET1/'$SUBNET1'/g' product-service-lattice.json
+perl -pi -e 's/SUBNET2/'$SUBNET2'/g' product-service-lattice.json
+perl -pi -e 's/SUBNET3/'$SUBNET3'/g' product-service-lattice.json
+perl -pi -e 's/LATTICE_PRODUCT_TG_ID/'$LATTICE_PRODUCT_TG_ID'/g' product-service-lattice.json
 ```
 
 - Create the ECS service:

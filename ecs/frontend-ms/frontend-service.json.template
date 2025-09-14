@@ -11,6 +11,7 @@
             "advancedConfiguration": {
                 "alternateTargetGroupArn": "GREEN_TARGET_GROUP_ARN",
                 "productionListenerRule": "LISTENER_RULE_ARN",
+                "testListenerRule": "TEST_LISTENER_RULE_ARN",
                 "roleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsInfrastructureRoleForLoadBalancers"
             }
         }
@@ -21,11 +22,20 @@
     "capacityProviderStrategy": [],
     "deploymentConfiguration": {
         "deploymentCircuitBreaker": {
-            "enable": false,
-            "rollback": false
+            "enable": true,
+            "rollback": true
         },
         "strategy": "BLUE_GREEN",
         "bakeTimeInMinutes": 0,
+        "lifecycleHooks": [
+            {
+                "hookTargetArn": "arn:aws:lambda:us-west-2:ACCOUNT_ID:function:frontend-ui-test",
+                "roleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsLifecycleRole",
+                "lifecycleStages": [
+                    "POST_TEST_TRAFFIC_SHIFT"
+                ]
+            }
+        ],
         "maximumPercent": 200,
         "minimumHealthyPercent": 100
     },

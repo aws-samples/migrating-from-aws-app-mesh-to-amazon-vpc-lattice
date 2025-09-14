@@ -1,0 +1,40 @@
+import json
+import urllib.request
+import urllib.error
+import logging
+
+# Configure logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+def lambda_handler(event, context):
+    logger.info("Lambda function started")
+    logger.info(f"Received event: {json.dumps(event)}")
+
+    url = "https://ALB_ENDPOINT:444/api/products"  # Replace with your actual URL
+    logger.info(f"Making request to URL: {url}")
+
+    try:
+        # Get JSON from endpoint using urllib
+        with urllib.request.urlopen(url) as response:
+            logger.info(f"HTTP response status: {response.status}")
+            data = json.loads(response.read().decode())
+            logger.info(f"Response data received - result: {data.get('result')}")
+        
+        # Check if result field is true
+        if data.get('result') == True:
+            logger.info("Result field is True - returning SUCCEEDED")
+            return {
+                "hookStatus": "SUCCEEDED"
+            }
+        else:
+            logger.warning(f"Result field is not True - returning FAILED")
+            return {
+                "hookStatus": "FAILED"
+            }
+            
+    except Exception as e:
+        logger.error(f"Exception occurred: {str(e)}", exc_info=True)
+        return {
+                "hookStatus": "FAILED"
+            }

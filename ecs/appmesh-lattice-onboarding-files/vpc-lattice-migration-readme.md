@@ -139,7 +139,8 @@ Update Inbound rules of ECS task security group and add a rule to accept traffic
 
 ## Step 9: Create a Lattice role for VPC lattice service.
 
-# Create trust policy for ECS service
+- Create trust policy for ECS service
+
 ```bash
 cat > lattice-trust-policy.json << EOF
 {
@@ -157,12 +158,14 @@ cat > lattice-trust-policy.json << EOF
 EOF
 ```
 
-# Create the IAM role
+- Create the IAM role
+
 ```bash
 aws iam create-role --role-name ecsLatticeRole --assume-role-policy-document file://lattice-trust-policy.json
 ```
 
-# Attach the VPC Lattice policy
+- Attach the VPC Lattice policy
+
 ```bash
 aws iam attach-role-policy --role-name ecsLatticeRole --policy-arn arn:aws:iam::aws:policy/AmazonECSInfrastructureRolePolicyForVpcLattice
 ```
@@ -191,6 +194,12 @@ aws ecs create-service \
   --region us-west-2
 ```
 
+- Check that the new task is running:
+
+```bash
+aws ecs list-tasks --cluster $CLUSTER_NAME --service-name product-lattice-service --region us-west-2
+```
+
 When you create an ECS service with the vpcLatticeConfigurations parameter, ECS automatically registers the tasks with the specified VPC Lattice target group.
 
 ## Step 11: Configure HTTPS (Optional)
@@ -209,11 +218,12 @@ To configure HTTPS for your VPC Lattice service:
 ## Step 12: Verify VPC Lattice integration
 
 1. Check the health of your targets in VPC Lattice:
-   ```bash
-   aws vpc-lattice list-targets \
-     --target-group-identifier $LATTICE_PRODUCT_TG_ID \
-     --region us-west-2
-   ```
+
+```bash
+aws vpc-lattice list-targets \
+  --target-group-identifier $LATTICE_PRODUCT_TG_ID \
+  --region us-west-2
+```
 
 2. Test connectivity to your service through VPC Lattice:
 
@@ -248,9 +258,10 @@ aws ecs update-service \
 ## Step 14: Verify the Migration
 
 1. Wait for the frontend-ui ECS service to complete deployment and test connectivity to your service through VPC Lattice:
-   ```bash
-   curl -v https://REPLACE_WITH_DNS_RECORD_FOR_PUBLIC_ALB/api/products
-   ```
+
+```bash
+curl -v https://$ALB_ENDPOINT/api/products
+```
 
 ## Troubleshooting
 

@@ -4,11 +4,12 @@ This guide provides instructions to launch Frontend UI service
 
 ## Prerequisites
 
-- Existing Public ALB with HTTPS listener in us-west-2 region
+- Existing Public ALB with two HTTPs listeners (production traffic port 443 and test traffic port 444) in us-west-2 region
 - Two Target groups (`blue` and `green`) with 'ip' target type, protocol HTTP, and port 3000
-- ALB Listener rule with `blue` target group receiving 100% of the requests and `green` target group receiving 0% of the requests
+- ALB Listener rules for both ports 443 and 444, with `blue` target group receiving 100% of the requests and `green` target group receiving 0% of the requests
 - Ensure ALB security group can send traffic to ECS tasks and receive HTTPs traffic from ECS tasks
-- For the purposes of this workshop, we will use the same Security Group, Subnets, ECS Task role and Task Execution role for all the microservices
+- Ensure ALB security group has restricted inbound traffic for port 444, at least allowing VPC resources, so Lambda function can connect to port 444 (Note: Lambda function will be used for ECS B/G deployment [lifecycle hook](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/deployment-lifecycle-hooks.html))
+- For the purposes of this workshop, we will use the same Security Group, Subnets, ECS Task role and Task Execution role for all the microservices, and the Lambda function
 
 ## Step 1: Register Task Definition
 
@@ -89,7 +90,132 @@ aws iam attach-role-policy \
       --policy-arn arn:aws:iam::aws:policy/AmazonECSInfrastructureRolePolicyForLoadBalancers
 ```
 
-## Step 4: Create ECS Service
+## Step 4: Create an IAM role to allow Lambda service to create CloudWatch log group/stream and put log events, and manage ENIs for the Lambda function.
+
+- Create trust policy for Lambda service
+
+```bash
+cat > lambda-trust-policy.json << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+```
+
+- Create the IAM role
+
+```bash
+aws iam create-role \
+      --role-name lambdaExecutionRole \
+      --assume-role-policy-document file://lambda-trust-policy.json
+```
+
+- Attach the IAM policies
+
+```bash
+aws iam attach-role-policy \
+  --role-name lambdaExecutionRole \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+```
+
+```bash
+aws iam attach-role-policy \
+  --role-name lambdaExecutionRole \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaENIManagementAccess
+```
+
+## Step 5: Create an IAM role to allow ECS deployment controller to invoke lifecycle hook Lambda function.
+
+- Create trust policy for Lambda service
+
+```bash
+cat > lifecycle-hook-trust-policy.json << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ecs.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+```
+
+- Create the IAM role
+
+```bash
+aws iam create-role \
+      --role-name ecsLifecycleRole \
+      --assume-role-policy-document file://lifecycle-hook-trust-policy.json
+```
+
+- Attach the IAM policy
+
+```bash
+aws iam put-role-policy \
+  --role-name ecsLifecycleRole \
+  --policy-name ecsLifecyclePolicy \
+  --policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "lambda:InvokeFunction",
+            "Resource": "arn:aws:lambda:us-west-2:'$ACCOUNT_ID':function:frontend-ui-test"
+        }
+    ]
+}'
+```
+
+## Step 6: Create Lambda function for lifecycle hook
+
+- Replace the ALB_ENDPOINT in the function code and create zip file
+
+```bash
+perl -pe 's#ALB_ENDPOINT#'$ALB_ENDPOINT'#g' function.py.template > function.py
+zip function.zip function.py
+```
+
+- Deploy the Lambda function
+
+```bash
+aws lambda create-function \
+  --function-name frontend-ui-test \
+  --runtime python3.13 --role arn:aws:iam::$ACCOUNT_ID:role/lambdaExecutionRole \
+  --handler function.lambda_handler \
+  --architectures arm64 \
+  --publish \
+  --vpc-config '{
+  "SubnetIds": ["'$SUBNET1'", "'$SUBNET2'", "'$SUBNET3'"],
+  "SecurityGroupIds": ["'$SECURITY_GROUP_ID'"],
+  "Ipv6AllowedForDualStack": false
+  }' \
+  --package-type Zip \
+  --zip-file fileb://./function.zip
+```
+
+## Step 7: Wait until Lambda function is `Active`
+
+```bash
+aws lambda get-function --function-name frontend-ui-test --region us-west-2 --output text --query "Configuration.State"
+```
+
+**Note:** Lambda function tests will fail until the frontend-ui service is deployed for the first time and becomes active in the next step.
+
+## Step 8: Create ECS Service
 
 - Run commands to modify placeholders CLUSTER_NAME, SUBNET1/2/3, task SECURITY_GROUP_ID, etc.
 
@@ -103,6 +229,7 @@ perl -pi -e 's/SUBNET2/'$SUBNET2'/g' frontend-service.json
 perl -pi -e 's/SUBNET3/'$SUBNET3'/g' frontend-service.json
 perl -pi -e 's#BLUE_TARGET_GROUP_ARN#'$BLUE_TARGET_GROUP_ARN'#g' frontend-service.json
 perl -pi -e 's#GREEN_TARGET_GROUP_ARN#'$GREEN_TARGET_GROUP_ARN'#g' frontend-service.json
+perl -pi -e 's#TEST_LISTENER_RULE_ARN#'$TEST_LISTENER_RULE_ARN'#g' frontend-service.json
 perl -pi -e 's#LISTENER_RULE_ARN#'$LISTENER_RULE_ARN'#g' frontend-service.json
 ```
 
@@ -116,7 +243,7 @@ aws ecs create-service \
   --region us-west-2
 ```
 
-## Step 5: Verify the ECS Service
+## Step 9: Verify the ECS Service
 
 1. Check that the new task is running:
 
@@ -126,14 +253,29 @@ aws ecs list-tasks --cluster $CLUSTER_NAME --service-name frontend-ui --region u
 
 2. Test the frontend-ui service using the appropriate DNS record for the PUBLIC ALB
 
-```
-curl https://REPLACE_WITH_DNS_RECORD_FOR_PUBLIC_ALB/
+```bash
+curl https://$ALB_ENDPOINT/
 ```
 
 3. Test the product-ms service through the frontend-ui service
 
+```bash
+curl https://$ALB_ENDPOINT/api/products
 ```
-curl https://REPLACE_WITH_DNS_RECORD_FOR_PUBLIC_ALB/api/products
+
+4. Test the Lambda function and check the logs
+
+```bash
+aws lambda invoke --function-name frontend-ui-test --region us-west-2 /dev/null
+```
+
+- Lambda function invocation will result in the following output:
+
+```json
+{
+    "StatusCode": 200,
+    "ExecutedVersion": "$LATEST"
+}
 ```
 
 ## VPC Lattice migration

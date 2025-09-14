@@ -93,7 +93,8 @@ echo "export PRODUCT_TASKDEF_REVISION=$PRODUCT_TASKDEF_REVISION" >> $GIT_BASE_DI
 
 /ecs/product-ms-xray
 ```
-Execute create-log-groups.sh to create the log groups:
+
+- Execute create-log-groups.sh to create the log groups:
 
 ```bash
 chmod +x create-log-groups.sh
@@ -101,6 +102,8 @@ sh create-log-groups.sh
 ```
 
 2. Add the appmesh and xray permissions to the existing ECS task role.
+
+- AppMesh Policy
 
 ```bash
 aws iam put-role-policy \
@@ -116,9 +119,11 @@ aws iam put-role-policy \
       }
     ]
   }'
+```
 
-```
-```
+- XRay Policy
+
+```bash
 aws iam put-role-policy \
   --role-name $ECS_TASK_ROLE \
   --policy-name xrayPolicy \
@@ -160,6 +165,7 @@ aws ecs create-service \
   --cli-input-json file://product-service.json \
   --region us-west-2
 ```
+
 Initially configure the ECS task security group to allow inbound traffic on ports 4000 and 5000 from within the VPC's CIDR range. Once you implement the load balancer, you'll need to update these security group rules to only accept traffic from the load balancer's security group, enhancing your application's security posture by restricting direct access. 
 
 ## Step 6: Verify Integration

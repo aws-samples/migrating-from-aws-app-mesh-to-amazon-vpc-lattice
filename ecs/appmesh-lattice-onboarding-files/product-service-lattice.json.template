@@ -8,8 +8,8 @@
     "capacityProviderStrategy": [],
     "deploymentConfiguration": {
         "deploymentCircuitBreaker": {
-            "enable": false,
-            "rollback": false
+            "enable": true,
+            "rollback": true
         },
         "maximumPercent": 200,
         "minimumHealthyPercent": 100

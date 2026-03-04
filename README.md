@@ -3,7 +3,10 @@
 
 ## Getting started
 
-This document is designed to give you an overview of the migration process. For ECS, please go to [ECS readme doc](ecs/README.md). For EKS, continue on.
+This document is designed to give you an overview of the migration process for ECS and EKS. 
+
+- **For ECS**, please go to [ECS readme doc](ecs/README.md). 
+- **For EKS**, continue on.
 
 You can use this example as a reference to adapt the steps for your own microservices applications migration.
 
